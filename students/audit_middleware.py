@@ -62,8 +62,8 @@ class SystemAuditMiddleware:
                 and not request.path.startswith("/static/")
             ):
                 module, _ = _module_for_path(request.path)
-                match = _OBJECT_ID.search(request.path)
-                object_reference = match.group(1) if match else ""
+                object_ids = _OBJECT_ID.findall(request.path)
+                object_reference = object_ids[-1] if object_ids else ""
                 SystemAuditEvent.objects.create(
                     user=user,
                     actor_username=user.get_username()[:150],
