@@ -13,8 +13,8 @@ from django.db import connection, connections
 
 def _prepare_media_restore(archive_path):
     media_root = Path(settings.MEDIA_ROOT).resolve()
-    media_root.parent.mkdir(parents=True, exist_ok=True)
-    staging_parent = Path(tempfile.mkdtemp(prefix=".student-affairs-media-", dir=str(media_root.parent)))
+    media_root.mkdir(parents=True, exist_ok=True)
+    staging_parent = Path(tempfile.mkdtemp(prefix=".student-affairs-media-", dir=str(media_root)))
     staging = staging_parent / "new"
     staging.mkdir()
     try:
@@ -52,20 +52,38 @@ def _prepare_media_restore(archive_path):
 
 def _install_media_restore(media_root, staging_parent, staging):
     previous = staging_parent / "previous"
-    moved_previous = False
+    previous.mkdir()
+    moved_current = []
+    installed_new = []
     try:
-        if media_root.exists():
-            os.replace(media_root, previous)
-            moved_previous = True
-        os.replace(staging, media_root)
+        # Move the existing media contents aside on the same Docker volume.
+        for item in list(media_root.iterdir()):
+            if item == staging_parent:
+                continue
+            destination = previous / item.name
+            os.replace(item, destination)
+            moved_current.append(item.name)
+
+        # Move the staged replacement files into the existing media volume.
+        for item in list(staging.iterdir()):
+            destination = media_root / item.name
+            os.replace(item, destination)
+            installed_new.append(item.name)
     except Exception:
-        if moved_previous and previous.exists() and not media_root.exists():
-            os.replace(previous, media_root)
+        for name in installed_new:
+            path = media_root / name
+            if path.is_dir() and not path.is_symlink():
+                shutil.rmtree(path, ignore_errors=True)
+            else:
+                path.unlink(missing_ok=True)
+        for name in moved_current:
+            old_path = previous / name
+            if old_path.exists():
+                os.replace(old_path, media_root / name)
         raise
     finally:
-        if previous.exists():
-            shutil.rmtree(previous, ignore_errors=True)
         shutil.rmtree(staging_parent, ignore_errors=True)
+
 
 
 class Command(BaseCommand):
