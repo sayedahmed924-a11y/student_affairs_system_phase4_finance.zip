@@ -23,7 +23,7 @@ jobs:
           pip install -r requirements.txt
       - name: Run Django tests
         env:
-          SECRET_KEY: test-only-secret-key
+          SECRET_KEY: test-only-secret-key-for-ci-only-0123456789-abcdefghijklmnopqrstuvwxyz-ABCDEFGHIJKLMNOPQRSTUVWXYZ
           DEBUG: "0"
           ALLOWED_HOSTS: localhost,127.0.0.1
         run: python manage.py test students --verbosity=2
