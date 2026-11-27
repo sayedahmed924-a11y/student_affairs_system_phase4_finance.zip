@@ -27,8 +27,21 @@ services:
     volumes:
       - media_data:/app/media
       - static_data:/app/staticfiles
+      - backup_data:/app/backups
+
+  backup:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    command: sh -c 'while true; do python manage.py backup_database; sleep ${BACKUP_INTERVAL_SECONDS:-86400}; done'
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - backup_data:/app/backups
 
 volumes:
   postgres_data:
   media_data:
   static_data:
+  backup_data:
