@@ -47,7 +47,7 @@ def backup_dashboard(request):
 
 @user_passes_test(_superuser, login_url="login")
 def download_backup(request, filename):
-    if not re.fullmatch(r"student_affairs_\d{8}_\d{6}\.(?:dump|sqlite3)", filename):
+    if not re.fullmatch(r"student_affairs_\d{8}_\d{6}(?:\.(?:dump|sqlite3)|_media\.tar\.gz)", filename):
         raise Http404
     directory = Path(getattr(settings, "BACKUP_DIR", settings.BASE_DIR / "backups")).resolve()
     path = (directory / filename).resolve()
