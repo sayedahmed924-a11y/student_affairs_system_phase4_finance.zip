@@ -79,22 +79,23 @@ def student_add(request):
 @login_required
 @permission_required("students.change_student", raise_exception=True)
 def student_edit(request, pk):
-    student = get_object_or_404(Student, pk=pk)
     if request.method == "POST":
-        form = StudentForm(request.POST, request.FILES, instance=student)
-        if form.is_valid():
-            reason = form.cleaned_data["reason"]
-            doc = form.cleaned_data.get("source_document")
-            with transaction.atomic():
+        with transaction.atomic():
+            student = get_object_or_404(Student.objects.select_for_update(), pk=pk)
+            form = StudentForm(request.POST, request.FILES, instance=student)
+            if form.is_valid():
+                reason = form.cleaned_data["reason"]
+                doc = form.cleaned_data.get("source_document")
                 old = {f.name: getattr(student, f.name) for f in Student._meta.fields}
                 updated = form.save(commit=False)
                 updated.save()
                 new = {f.name: getattr(updated, f.name) for f in Student._meta.fields}
                 changes = {k: v for k, v in new.items() if str(old.get(k) or "") != str(v or "")}
                 _log_changes(updated, old, changes, request.user, reason, doc)
-            messages.success(request, "تم حفظ التعديلات وتوثيقها.")
-            return redirect("students:detail", pk=student.pk)
+                messages.success(request, "تم حفظ التعديلات وتوثيقها.")
+                return redirect("students:detail", pk=updated.pk)
     else:
+        student = get_object_or_404(Student, pk=pk)
         form = StudentForm(instance=student)
     return render(request, "students/student_form.html", {"form": form, "title": "تعديل بيانات الطالب"})
 
