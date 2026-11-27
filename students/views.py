@@ -473,6 +473,7 @@ def result_edit(request, pk):
 
 @login_required
 @permission_required("students.view_studentcharge", raise_exception=True)
+@permission_required("students.view_paymentreceipt", raise_exception=True)
 def finance_home(request):
     from django.db.models import Sum
     charges = StudentCharge.objects.filter(is_cancelled=False).prefetch_related("payments")
@@ -501,6 +502,7 @@ def charge_add(request):
 
 @login_required
 @permission_required("students.view_studentcharge", raise_exception=True)
+@permission_required("students.view_paymentreceipt", raise_exception=True)
 def finance_charges(request):
     q = request.GET.get("q", "").strip()
     charges = StudentCharge.objects.select_related("student", "term", "created_by").prefetch_related("payments")
