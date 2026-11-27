@@ -11,7 +11,7 @@ from students.models import FeeCatalog, Student
 
 def norm(value):
     text = str(value or "").strip().lower()
-    text = text.replace("أ", "ا").replace("إ", "ا").replace("آ", "ا").replace("ى", "ي")
+    text = text.replace("أ", "ا").replace("إ", "ا").replace("آ", "ا").replace("ى", "ي").replace("ة", "ه")
     text = re.sub(r"[\s_\-./:()]+", "", text)
     return text
 
