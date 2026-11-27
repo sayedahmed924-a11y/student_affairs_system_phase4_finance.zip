@@ -27,7 +27,7 @@ label{font-weight:bold;font-size:14px}form p{margin:8px 0}.errorlist{color:#b91c
 {% if perms.students.view_academicterm %}<a href="/students/academic/">الشؤون الأكاديمية</a>{% endif %}
 {% if perms.students.view_studentcharge %}<a href="/students/finance/">الإدارة المالية</a>{% endif %}
 {% if perms.students.view_student or perms.students.view_studentcharge or perms.students.view_courseregistration %}<a href="/students/reports/">التقارير</a>{% endif %}
-{% if user.is_superuser %}<a href="/students/staff-access/">الموظفون والصلاحيات</a>{% endif %}
+{% if user.is_superuser %}<a href="/students/staff-access/">الموظفون والصلاحيات</a>{% endif %}{% if user.is_superuser %}<a href="/students/backups/">النسخ الاحتياطي</a>{% endif %}
 {% endif %}
 {% if user.is_authenticated %}<form method="post" action="/logout/" style="display:inline">{% csrf_token %}<button type="submit" style="background:transparent;padding:0;color:white">خروج</button></form>{% endif %}</nav></header>
 <div class="wrap">{% if messages %}{% for message in messages %}<div class="notice">{{ message }}</div>{% endfor %}{% endif %}
