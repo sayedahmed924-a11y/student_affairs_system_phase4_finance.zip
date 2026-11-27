@@ -82,7 +82,9 @@ class Command(BaseCommand):
                 f"النسخ المحذوفة لانتهاء مدة الاحتفاظ: {removed}"
             ))
         except FileNotFoundError as exc:
-            raise CommandError("أداة pg_dump غير موجودة. تأكد من تثبيت postgresql-client داخل صورة الخادم.") from exc
+            if "target" in locals():
+                target.unlink(missing_ok=True)
+            raise CommandError("أداة pg_dump أو pg_restore غير موجودة. تأكد من تثبيت postgresql-client-16 داخل صورة الخادم.") from exc
         except subprocess.CalledProcessError as exc:
             target.unlink(missing_ok=True)
             raise CommandError(f"فشل pg_dump: {exc.stderr or exc}") from exc
