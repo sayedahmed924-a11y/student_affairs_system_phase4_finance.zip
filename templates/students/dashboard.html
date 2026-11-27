@@ -1,0 +1,8 @@
+{% extends "base.html" %}{% block content %}
+<h1>لوحة التحكم</h1><div class="grid">
+<div class="card"><div class="muted">إجمالي الطلاب النشطين</div><div class="num">{{ total }}</div></div>
+<div class="card"><div class="muted">الطلاب المستجدون</div><div class="num">{{ new_count }}</div></div>
+<div class="card"><div class="muted">دفعات Excel بانتظار الاعتماد</div><div class="num">{{ pending }}</div></div></div>
+<div class="actions"><a class="btn" href="/students/add/">إضافة طالب</a><a class="btn secondary" href="/students/import/">تحديث Excel</a><a class="btn secondary" href="/students/">عرض الطلاب</a><a class="btn secondary" href="/students/academic/">الشؤون الأكاديمية</a></div>
+<div class="card"><h2>أحدث العمليات</h2><table><tr><th>الطالب</th><th>العملية</th><th>الموظف</th><th>التاريخ</th></tr>
+{% for x in recent %}<tr><td><a href="/students/{{ x.student_id }}/">{{ x.student }}</a></td><td>{{ x.get_action_display }}</td><td>{{ x.employee }}</td><td>{{ x.created_at|date:"Y-m-d H:i" }}</td></tr>{% empty %}<tr><td colspan="4">لا توجد عمليات بعد.</td></tr>{% endfor %}</table></div>{% endblock %}

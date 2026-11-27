@@ -1,0 +1,3 @@
+{% extends "base.html" %}{% block content %}<h1>تحديث الطلاب من Excel</h1><div class="card"><p>يجب أن يحتوي الصف الأول على أسماء الأعمدة بالإنجليزية. الحقول الإلزامية: <b>university_id</b> و <b>full_name</b>.</p>
+<p>الحقول الاختيارية: national_id, nationality, phone, address, academic_year, department, division, study_status, notes.</p>
+<form method="post" enctype="multipart/form-data">{% csrf_token %}{{ form.as_p }}<button>تحليل الملف ومعاينة التغييرات</button></form></div>{% endblock %}

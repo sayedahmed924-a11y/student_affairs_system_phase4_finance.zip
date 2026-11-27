@@ -1,0 +1,7 @@
+{% extends "base.html" %}{% block content %}
+<h1>الاستحقاقات المالية</h1>
+<div class="actions"><a class="btn" href="{% url 'students:charge_add' %}">إضافة استحقاق</a><a class="btn secondary" href="{% url 'students:payment_add' %}">تسجيل سداد</a></div>
+<form method="get"><input name="q" value="{{ q }}" placeholder="ابحث بالرقم الجامعي أو اسم الطالب أو بيان الاستحقاق"><button type="submit">بحث</button></form>
+<div class="card"><table><tr><th>الرقم الجامعي</th><th>الطالب</th><th>الاستحقاق</th><th>الفصل</th><th>المطلوب</th><th>المسدد</th><th>المتبقي</th><th>الحالة</th><th>إجراء</th></tr>
+{% for c in charges %}<tr><td>{{ c.student.university_id }}</td><td>{{ c.student.full_name }}</td><td>{{ c.title }}</td><td>{{ c.term|default:"-" }}</td><td>{{ c.amount|floatformat:2 }}</td><td>{{ c.paid_amount|floatformat:2 }}</td><td>{{ c.balance|floatformat:2 }}</td><td>{% if c.is_cancelled %}ملغي{% else %}{{ c.payment_status }}{% endif %}</td><td>{% if not c.is_cancelled and c.balance > 0 %}<a href="{% url 'students:payment_add' %}">تسجيل سداد</a>{% endif %}{% if not c.is_cancelled and not c.payments.exists %}<form method="post" action="{% url 'students:charge_cancel' c.pk %}">{% csrf_token %}<input name="reason" placeholder="سبب الإلغاء" required><button type="submit" class="secondary">إلغاء الاستحقاق</button></form>{% endif %}</td></tr>{% empty %}<tr><td colspan="9">لا توجد استحقاقات مالية.</td></tr>{% endfor %}</table></div>
+{% endblock %}

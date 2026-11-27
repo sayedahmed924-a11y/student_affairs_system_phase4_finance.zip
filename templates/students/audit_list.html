@@ -1,0 +1,2 @@
+{% extends "base.html" %}{% block content %}<h1>سجل التعديلات العام</h1><table><tr><th>الطالب</th><th>العملية</th><th>الحقل</th><th>قبل</th><th>بعد</th><th>الموظف</th><th>السبب</th><th>التاريخ</th></tr>
+{% for l in logs %}<tr><td><a href="/students/{{ l.student_id }}/">{{ l.student }}</a></td><td>{{ l.get_action_display }}</td><td>{{ l.field_name }}</td><td>{{ l.old_value|truncatechars:40 }}</td><td>{{ l.new_value|truncatechars:40 }}</td><td>{{ l.employee }}</td><td>{{ l.reason }}</td><td>{{ l.created_at|date:"Y-m-d H:i" }}</td></tr>{% endfor %}</table>{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}كشف درجات الطالب{% endblock %}
+{% block content %}
+<h1>كشف درجات الطالب</h1>
+<div class="card" style="margin-bottom:16px">
+  <div class="grid">
+    <div><div class="muted">الرقم الجامعي</div><strong>{{ student.university_id }}</strong></div>
+    <div><div class="muted">اسم الطالب</div><strong>{{ student.full_name }}</strong></div>
+    <div><div class="muted">الفرقة الحالية</div><strong>{{ student.academic_year|default:"—" }}</strong></div>
+    <div><div class="muted">القسم</div><strong>{{ student.department|default:"—" }}</strong></div>
+  </div>
+  <div class="grid" style="margin-top:18px">
+    <div><div class="muted">الساعات المجتازة</div><div class="num">{{ earned_hours }}</div></div>
+    <div><div class="muted">الساعات المسجلة (بما فيها الإعادات)</div><div class="num">{{ attempted_hours }}</div></div>
+    <div><div class="muted">إجمالي ساعات الخطة المسجلة</div><div class="num">{{ required_hours }}</div></div>
+    <div><div class="muted">الساعات المتبقية حسب المواد المفعلة</div><div class="num">{{ remaining_hours }}</div></div>
+  </div>
+</div>
+<div class="actions"><button type="button" onclick="window.print()">طباعة كشف الدرجات</button><a class="btn secondary" href="{% url 'students:reenrollment_add' %}">إعادة قيد</a></div>
+{% for enrollment in enrollments %}
+<div class="card" style="margin:14px 0">
+  <h2>{{ enrollment.term }} — {{ enrollment.get_status_display }}</h2>
+  <div class="muted">الفرقة وقت القيد: {{ enrollment.level }} | القسم: {{ enrollment.department|default:"—" }}</div>
+  <table style="margin-top:12px">
+    <tr><th>كود المادة</th><th>المادة</th><th>الساعات</th><th>أعمال السنة</th><th>الامتحان</th><th>المجموع</th><th>التقدير</th><th>النتيجة</th></tr>
+    {% for result in enrollment.course_registrations.all %}
+    <tr><td>{{ result.course.code }}</td><td>{{ result.course.name }}</td><td>{{ result.course.credit_hours }}</td><td>{{ result.coursework_score|default:"—" }}</td><td>{{ result.exam_score|default:"—" }}</td><td>{{ result.total_score|default:"—" }}</td><td>{{ result.grade|default:"—" }}</td><td>{{ result.get_result_status_display }}</td></tr>
+    {% empty %}<tr><td colspan="8">لا توجد مواد مسجلة لهذا الفصل.</td></tr>{% endfor %}
+  </table>
+</div>
+{% empty %}<div class="card">لا توجد قيود دراسية مسجلة لهذا الطالب.</div>{% endfor %}
+<style>@media print{header,.actions{display:none!important}body{background:white}.wrap{max-width:none;margin:0;padding:0}.card{box-shadow:none;break-inside:avoid}table{font-size:11px}th,td{padding:6px}}</style>
+{% endblock %}

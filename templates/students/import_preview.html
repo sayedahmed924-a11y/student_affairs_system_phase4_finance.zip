@@ -1,0 +1,6 @@
+{% extends "base.html" %}{% block content %}<h1>معاينة تحديث Excel</h1><div class="card"><p>رقم الدفعة: {{ batch.pk }} — الحالة: {{ batch.get_status_display }}</p>
+<h2>الصفوف المقروءة: {{ preview|length }}</h2><table><tr><th>الصف</th><th>الرقم الجامعي</th><th>العملية</th><th>الاختلافات</th></tr>
+{% for x in preview %}<tr><td>{{ x.row }}</td><td>{{ x.university_id }}</td><td>{{ x.operation }}</td><td>{% for k,v in x.changes.items %}{{ k }}: {{ v.old }} ← {{ v.new }}<br>{% empty %}لا اختلاف{% endfor %}</td></tr>{% endfor %}</table>
+{% if errors %}<h2>أخطاء تحتاج مراجعة</h2>{% for e in errors %}<p>صف {{ e.row }}: {{ e.error }}</p>{% endfor %}{% endif %}
+<form method="post" action="/students/import/{{ batch.pk }}/approve/">{% csrf_token %}<button {% if errors %}disabled{% endif %}>اعتماد التحديث</button></form>
+<form method="post" action="/students/import/{{ batch.pk }}/reject/" style="margin-top:10px">{% csrf_token %}<button style="background:#9f2935">رفض الدفعة</button></form></div>{% endblock %}

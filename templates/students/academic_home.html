@@ -1,0 +1,8 @@
+{% extends "base.html" %}{% block content %}<h1>الشؤون الأكاديمية</h1>
+<div class="grid">
+<div class="card"><div class="muted">المواد الدراسية</div><div class="num">{{ courses_count }}</div><a href="/students/academic/courses/">عرض المواد</a></div>
+<div class="card"><div class="muted">قيود الفصول الدراسية</div><div class="num">{{ enrollments_count }}</div><a href="/students/academic/enrollments/">عرض القيود</a></div>
+<div class="card"><div class="muted">تسجيلات النتائج</div><div class="num">{{ results_count }}</div><a href="/students/academic/results/">عرض النتائج</a></div>
+<div class="card"><div class="muted">الوقائع الأكاديمية</div><div class="num">{{ events_count }}</div><a href="/students/academic/events/">عرض الوقائع</a></div></div>
+<div class="actions"><a class="btn" href="/students/academic/terms/add/">إضافة فصل دراسي</a><a class="btn" href="/students/academic/courses/add/">إضافة مادة</a><a class="btn" href="/students/academic/enrollments/add/">تسجيل قيد (مع تسجيل المواد تلقائيًا)</a><a class="btn secondary" href="/students/academic/reenroll/">إعادة قيد طالب</a><a class="btn" href="/students/academic/results/add/">إضافة نتيجة</a><a class="btn" href="/students/academic/events/add/">واقعة أكاديمية</a></div>
+<div class="card"><h2>الفصول الدراسية</h2><table><tr><th>الفصل</th><th>العام الجامعي</th><th>الفصل الدراسي</th><th>الحالي</th></tr>{% for t in terms %}<tr><td>{{ t.name }}</td><td>{{ t.academic_year }}</td><td>{{ t.get_semester_display }}</td><td>{{ t.is_active|yesno:"نعم,لا" }}</td></tr>{% empty %}<tr><td colspan="4">لم تتم إضافة فصول دراسية بعد.</td></tr>{% endfor %}</table><a href="/students/academic/terms/">كل الفصول</a></div>{% endblock %}

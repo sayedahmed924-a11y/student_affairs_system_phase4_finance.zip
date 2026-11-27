@@ -1,0 +1,12 @@
+{% extends "base.html" %}{% block content %}
+<h1>الإدارة المالية</h1>
+<div class="grid">
+<div class="card"><div class="muted">إجمالي الاستحقاقات</div><div class="num">{{ total_due|floatformat:2 }}</div><small>جنيه</small></div>
+<div class="card"><div class="muted">إجمالي المحصل</div><div class="num">{{ total_paid|floatformat:2 }}</div><small>جنيه</small></div>
+<div class="card"><div class="muted">الرصيد المتبقي</div><div class="num">{{ total_balance|floatformat:2 }}</div><small>جنيه</small></div>
+<div class="card"><div class="muted">عدد الاستحقاقات</div><div class="num">{{ charges_count }}</div></div>
+<div class="card"><div class="muted">إيصالات السداد الفعالة</div><div class="num">{{ receipts_count }}</div></div>
+</div>
+<div class="actions"><a class="btn" href="{% url 'students:charge_add' %}">إضافة استحقاق</a><a class="btn" href="{% url 'students:payment_add' %}">تسجيل سداد</a><a class="btn secondary" href="{% url 'students:finance_charges' %}">كشف الاستحقاقات</a><a class="btn secondary" href="{% url 'students:receipt_list' %}">إيصالات السداد</a></div>
+<div class="card"><h2>أحدث الإيصالات</h2><table><tr><th>رقم الإيصال</th><th>الطالب</th><th>الاستحقاق</th><th>المبلغ</th><th>التاريخ</th><th>الحالة</th></tr>{% for r in recent_receipts %}<tr><td>{{ r.receipt_number }}</td><td>{{ r.charge.student.full_name }}</td><td>{{ r.charge.title }}</td><td>{{ r.amount|floatformat:2 }}</td><td>{{ r.received_at|date:"Y-m-d H:i" }}</td><td>{% if r.is_voided %}ملغي{% else %}فعال{% endif %}</td></tr>{% empty %}<tr><td colspan="6">لا توجد إيصالات حتى الآن.</td></tr>{% endfor %}</table></div>
+{% endblock %}
