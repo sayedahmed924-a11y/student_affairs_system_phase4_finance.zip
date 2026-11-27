@@ -3,8 +3,8 @@ from .models import Student, AuditLog, ImportBatch
 
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
-    list_display = ("university_id", "full_name", "academic_year", "department", "study_status", "is_archived")
-    search_fields = ("university_id", "full_name", "national_id")
+    list_display = ("university_id", "financial_code", "full_name", "program", "academic_year", "department", "study_status", "is_archived")
+    search_fields = ("university_id", "financial_code", "full_name", "national_id", "program")
     list_filter = ("academic_year", "department", "study_status", "is_archived")
 
 @admin.register(AuditLog)
