@@ -14,6 +14,20 @@ User = get_user_model()
 
 # Built-in Django groups and permissions: no custom database tables or migrations.
 ROLE_DEFINITIONS = {
+    "مدير شؤون الطلاب": {
+        "label": "مدير شؤون الطلاب بصلاحيات تشغيلية كاملة",
+        "permissions": [
+            "view_student", "add_student", "change_student",
+            "view_importbatch", "add_importbatch", "change_importbatch",
+            "view_auditlog", "view_academicterm", "add_academicterm", "change_academicterm",
+            "view_course", "add_course", "change_course",
+            "view_studentenrollment", "add_studentenrollment", "change_studentenrollment",
+            "view_courseregistration", "add_courseregistration", "change_courseregistration",
+            "view_studentacademicevent", "add_studentacademicevent",
+            "view_studentcharge", "add_studentcharge", "change_studentcharge",
+            "view_paymentreceipt", "add_paymentreceipt", "change_paymentreceipt",
+        ],
+    },
     "شؤون التسجيل": {
         "label": "موظف شؤون الطلاب والتسجيل",
         "permissions": [
