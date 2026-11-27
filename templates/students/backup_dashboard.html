@@ -6,7 +6,7 @@
 </div>
 <div class="card">
   <h2>إنشاء نسخة احتياطية الآن</h2>
-  <p>ينشئ النظام نسخة مستقلة من قاعدة البيانات ويحفظها في وحدة تخزين النسخ الاحتياطية.</p>
+  <p>ينشئ النظام ملفًا لقاعدة البيانات وملفًا للمستندات المرفوعة، ويحفظ الملفين معًا في وحدة تخزين النسخ الاحتياطية.</p>
   <form method="post">{% csrf_token %}
     <button type="submit">إنشاء نسخة احتياطية الآن</button>
   </form>
@@ -40,7 +40,7 @@
     <li>نفّذ الأمر من مجلد المشروع، مع استبدال اسم الملف باسم نسخة موجودة:</li>
   </ol>
   <pre><code>docker compose run --rm --no-deps web python manage.py restore_database student_affairs_YYYYMMDD_HHMMSS.dump --confirm RESTORE</code></pre>
-  <p>لقاعدة SQLite استخدم ملف .sqlite3 بدل .dump. بعد نجاح الاستعادة شغّل: <code>docker compose up -d web backup</code></p>
+  <p>اختر ملف قاعدة البيانات بامتداد .dump أو .sqlite3؛ يجب أن يكون ملف المستندات المطابق له باللاحقة _media.tar.gz موجودًا أيضًا. بعد نجاح الاستعادة شغّل: <code>docker compose up -d web backup</code></p>
   <p>احتفظ بنسخة إضافية خارج جهاز الخادم وعلى وسيط منفصل؛ فالنسخ داخل وحدة التخزين نفسها لا تحمي من تلف القرص أو فقدانه.</p>
 </div>
 {% endblock %}
