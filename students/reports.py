@@ -75,6 +75,8 @@ def reports_home(request):
     for permission in required_permissions.get(kind, ("students.view_student",)):
         if not request.user.has_perm(permission):
             raise PermissionDenied
+    if request.GET.get("export") == "xlsx" and not request.user.has_perm("students.export_reports"):
+        raise PermissionDenied
     rows, headers = [], []
     title = "تقرير بيانات الطلاب"
     stats = {}
