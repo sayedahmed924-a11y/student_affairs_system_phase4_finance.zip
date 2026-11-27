@@ -34,7 +34,8 @@ ALIASES = {
 def header_key(value):
     key = norm(value)
     for field, aliases in ALIASES.items():
-        if key in {norm(x) for x in aliases}:
+        normalized_aliases = {norm(x) for x in aliases}
+        if key in normalized_aliases or any(key.startswith(alias) and len(key) - len(alias) <= 4 for alias in normalized_aliases):
             return field
     return None
 
