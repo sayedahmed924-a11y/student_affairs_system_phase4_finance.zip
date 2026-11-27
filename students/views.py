@@ -2,11 +2,12 @@ import json, uuid
 from datetime import datetime
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from openpyxl import load_workbook
 from .models import Student, AuditLog, ImportBatch
 from .forms import StudentForm, ImportForm, StudentChargeForm, PaymentReceiptForm, VoidReceiptForm
@@ -84,19 +85,23 @@ def student_edit(request, pk):
             student = get_object_or_404(Student.objects.select_for_update(), pk=pk)
             form = StudentForm(request.POST, request.FILES, instance=student)
             if form.is_valid():
-                reason = form.cleaned_data["reason"]
-                doc = form.cleaned_data.get("source_document")
-                old = {f.name: getattr(student, f.name) for f in Student._meta.fields}
-                updated = form.save(commit=False)
-                updated.save()
-                new = {f.name: getattr(updated, f.name) for f in Student._meta.fields}
-                changes = {k: v for k, v in new.items() if str(old.get(k) or "") != str(v or "")}
-                _log_changes(updated, old, changes, request.user, reason, doc)
-                messages.success(request, "تم حفظ التعديلات وتوثيقها.")
-                return redirect("students:detail", pk=updated.pk)
+                submitted_version = parse_datetime(form.cleaned_data.get("version_token", ""))
+                if not submitted_version or submitted_version != student.updated_at:
+                    form.add_error(None, "تم تعديل بيانات هذا الطالب بواسطة موظف آخر بعد فتح الصفحة. لم يتم حفظ بياناتك؛ أعد تحميل الصفحة وراجع التعديلات الحالية.")
+                else:
+                    reason = form.cleaned_data["reason"]
+                    doc = form.cleaned_data.get("source_document")
+                    old = {f.name: getattr(student, f.name) for f in Student._meta.fields}
+                    updated = form.save(commit=False)
+                    updated.save()
+                    new = {f.name: getattr(updated, f.name) for f in Student._meta.fields}
+                    changes = {k: v for k, v in new.items() if str(old.get(k) or "") != str(v or "")}
+                    _log_changes(updated, old, changes, request.user, reason, doc)
+                    messages.success(request, "تم حفظ التعديلات وتوثيقها.")
+                    return redirect("students:detail", pk=updated.pk)
     else:
         student = get_object_or_404(Student, pk=pk)
-        form = StudentForm(instance=student)
+        form = StudentForm(instance=student, initial={"version_token": student.updated_at.isoformat()})
     return render(request, "students/student_form.html", {"form": form, "title": "تعديل بيانات الطالب"})
 
 @login_required
@@ -533,11 +538,8 @@ def payment_add(request):
                 receipt.save()
         except ValueError as exc:
             form.add_error(None, str(exc))
-        except Exception as exc:
-            if "receipt_number" in str(exc).lower() or "unique" in str(exc).lower():
-                form.add_error("receipt_number", "رقم الإيصال مستخدم من قبل.")
-            else:
-                raise
+        except IntegrityError:
+            form.add_error("receipt_number", "رقم الإيصال مستخدم من قبل؛ لم يتم تسجيل إيصال مكرر.")
         else:
             messages.success(request, f"تم تسجيل السداد. رقم الإيصال: {receipt.receipt_number}")
             return redirect("students:receipt_list")
@@ -563,6 +565,9 @@ def receipt_void(request, pk):
     form = VoidReceiptForm(request.POST)
     if form.is_valid():
         with transaction.atomic():
+            # Keep the same lock order as payment_add: charge first, then receipt.
+            charge_id = PaymentReceipt.objects.only("charge_id").get(pk=pk).charge_id
+            StudentCharge.objects.select_for_update().get(pk=charge_id)
             receipt = PaymentReceipt.objects.select_for_update().get(pk=pk)
             if receipt.is_voided:
                 messages.warning(request, "الإيصال ملغي بالفعل.")
@@ -581,20 +586,21 @@ def receipt_void(request, pk):
 @login_required
 @permission_required("students.change_studentcharge", raise_exception=True)
 def charge_cancel(request, pk):
-    charge = get_object_or_404(StudentCharge, pk=pk)
     if request.method == "POST":
         reason = request.POST.get("reason", "").strip()
-        if not reason:
-            messages.error(request, "يجب كتابة سبب إلغاء الاستحقاق.")
-        elif charge.payments.filter(is_voided=False).exists():
-            messages.error(request, "لا يمكن إلغاء استحقاق عليه إيصالات سداد فعالة؛ راجع الإيصالات أولًا.")
-        elif not charge.is_cancelled:
-            charge.is_cancelled = True
-            charge.cancellation_reason = reason
-            charge.cancelled_by = request.user
-            charge.cancelled_at = timezone.now()
-            charge.save(update_fields=["is_cancelled", "cancellation_reason", "cancelled_by", "cancelled_at"])
-            messages.success(request, "تم إلغاء الاستحقاق مع الاحتفاظ بسجله.")
+        with transaction.atomic():
+            charge = get_object_or_404(StudentCharge.objects.select_for_update(), pk=pk)
+            if not reason:
+                messages.error(request, "يجب كتابة سبب إلغاء الاستحقاق.")
+            elif charge.payments.filter(is_voided=False).exists():
+                messages.error(request, "لا يمكن إلغاء استحقاق عليه إيصالات سداد فعالة؛ راجع الإيصالات أولًا.")
+            elif not charge.is_cancelled:
+                charge.is_cancelled = True
+                charge.cancellation_reason = reason
+                charge.cancelled_by = request.user
+                charge.cancelled_at = timezone.now()
+                charge.save(update_fields=["is_cancelled", "cancellation_reason", "cancelled_by", "cancelled_at"])
+                messages.success(request, "تم إلغاء الاستحقاق مع الاحتفاظ بسجله.")
     return redirect("students:finance_charges")
 
 
