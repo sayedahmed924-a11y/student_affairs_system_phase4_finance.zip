@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}إدارة الموظفين والصلاحيات{% endblock %}
+{% block content %}
+<h1>إدارة الموظفين والصلاحيات</h1>
+<p class="muted">هذه الشاشة متاحة لمدير النظام فقط. الأدوار تستخدم مجموعات Django، ويمكن إسناد أكثر من دور للموظف.</p>
+<div class="card">
+<h2>{% if selected_user %}تعديل حساب: {{ selected_user.username }}{% else %}إضافة موظف جديد{% endif %}</h2>
+<form method="post">{% csrf_token %}
+{% if selected_user %}<input type="hidden" name="user_id" value="{{ selected_user.pk }}">{% endif %}
+<div class="grid">
+<div><label>اسم المستخدم</label><input name="username" required maxlength="150" value="{{ selected_user.username|default:'' }}"></div>
+<div><label>البريد الإلكتروني</label><input type="email" name="email" value="{{ selected_user.email|default:'' }}"></div>
+<div><label>الاسم الأول</label><input name="first_name" value="{{ selected_user.first_name|default:'' }}"></div>
+<div><label>اسم العائلة</label><input name="last_name" value="{{ selected_user.last_name|default:'' }}"></div>
+<div><label>{% if selected_user %}كلمة مرور جديدة (اتركها فارغة دون تغيير){% else %}كلمة المرور{% endif %}</label><input type="password" name="password" {% if not selected_user %}required{% endif %} autocomplete="new-password"></div>
+</div>
+<label><input style="width:auto" type="checkbox" name="is_active" {% if not selected_user or selected_user.is_active %}checked{% endif %}> الحساب نشط</label>
+<h3>مجموعات الصلاحيات</h3>
+<div class="grid">
+{% for group in groups %}
+<label class="card" style="display:block"><input style="width:auto" type="checkbox" name="groups" value="{{ group.pk }}" {% if selected_user and group in selected_user.groups.all %}checked{% endif %}> <b>{{ group.name }}</b><div class="muted">{{ role_definitions|get_item:group.name|default:"صلاحيات المجموعة" }}</div></label>
+{% endfor %}
+</div>
+<div class="actions"><button type="submit">حفظ الموظف والصلاحيات</button><a class="btn secondary" href="{% url 'students:staff_access' %}">حساب جديد / إلغاء</a></div>
+</form>
+</div>
+<div class="card" style="margin-top:18px"><h2>حسابات الموظفين</h2>
+<div style="overflow:auto"><table><thead><tr><th>اسم المستخدم</th><th>الاسم</th><th>الحالة</th><th>الأدوار</th><th>إجراء</th></tr></thead><tbody>
+{% for employee in staff_users %}<tr><td>{{ employee.username }}</td><td>{{ employee.get_full_name|default:"—" }}</td><td>{% if employee.is_active %}نشط{% else %}موقوف{% endif %}</td><td>{% for group in employee.groups.all %}{{ group.name }}{% if not forloop.last %}، {% endif %}{% empty %}بدون دور{% endfor %}</td><td><a href="?edit={{ employee.pk }}">تعديل</a></td></tr>{% empty %}<tr><td colspan="5">لا توجد حسابات موظفين.</td></tr>{% endfor %}
+</tbody></table></div></div>
+{% endblock %}
