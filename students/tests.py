@@ -153,6 +153,7 @@ class CentralAuditTests(TransactionTestCase):
 
 
 from decimal import Decimal
+from datetime import timedelta
 from .models import StudentCharge, PaymentReceipt
 from .forms import PaymentReceiptForm
 
@@ -179,8 +180,11 @@ class ConcurrentStudentEditTests(TestCase):
         self.assertEqual(page.status_code, 200)
         stale_token = page.context["form"]["version_token"].value()
 
-        self.student.full_name = "تعديل الموظف الأول"
-        self.student.save(update_fields=["full_name", "updated_at"])
+        Student.objects.filter(pk=self.student.pk).update(
+            full_name="تعديل الموظف الأول",
+            updated_at=self.student.updated_at + timedelta(seconds=5),
+        )
+        self.student.refresh_from_db()
 
         response = self.client.post(
             reverse("students:edit", kwargs={"pk": self.student.pk}),
