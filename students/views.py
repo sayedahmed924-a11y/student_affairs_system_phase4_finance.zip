@@ -13,6 +13,7 @@ from .forms import StudentForm, ImportForm, StudentChargeForm, PaymentReceiptFor
 from .models import StudentCharge, PaymentReceipt
 
 @login_required
+@permission_required("students.view_student", raise_exception=True)
 def dashboard(request):
     active_students = Student.objects.filter(is_archived=False)
     total = active_students.count()
@@ -33,6 +34,7 @@ def dashboard(request):
     })
 
 @login_required
+@permission_required("students.view_student", raise_exception=True)
 def student_list(request):
     q = request.GET.get("q", "").strip()
     students = Student.objects.filter(is_archived=False)
@@ -41,6 +43,7 @@ def student_list(request):
     return render(request, "students/student_list.html", {"students": students[:300], "q": q})
 
 @login_required
+@permission_required("students.view_student", raise_exception=True)
 def student_detail(request, pk):
     student = get_object_or_404(Student, pk=pk)
     logs = student.audit_logs.select_related("employee")
@@ -216,6 +219,7 @@ from .models import AcademicTerm, Course, StudentEnrollment, CourseRegistration,
 from .forms import AcademicTermForm, CourseForm, EnrollmentForm, CourseRegistrationForm, AcademicEventForm, ReEnrollmentForm
 
 @login_required
+@permission_required("students.view_academicterm", raise_exception=True)
 def academic_home(request):
     return render(request, "students/academic_home.html", {
         "terms": AcademicTerm.objects.all()[:10],
@@ -467,6 +471,7 @@ def result_edit(request, pk):
 
 
 @login_required
+@permission_required("students.view_studentcharge", raise_exception=True)
 def finance_home(request):
     from django.db.models import Sum
     charges = StudentCharge.objects.filter(is_cancelled=False).prefetch_related("payments")
@@ -494,6 +499,7 @@ def charge_add(request):
 
 
 @login_required
+@permission_required("students.view_studentcharge", raise_exception=True)
 def finance_charges(request):
     q = request.GET.get("q", "").strip()
     charges = StudentCharge.objects.select_related("student", "term", "created_by").prefetch_related("payments")
@@ -535,6 +541,7 @@ def payment_add(request):
 
 
 @login_required
+@permission_required("students.view_paymentreceipt", raise_exception=True)
 def receipt_list(request):
     q = request.GET.get("q", "").strip()
     receipts = PaymentReceipt.objects.select_related("charge__student", "received_by", "voided_by")
@@ -588,6 +595,7 @@ def charge_cancel(request, pk):
 
 
 @login_required
+@permission_required("students.view_paymentreceipt", raise_exception=True)
 def receipt_print(request, pk):
     receipt = get_object_or_404(PaymentReceipt.objects.select_related("charge__student", "charge__term", "received_by"), pk=pk)
     return render(request, "students/receipt_print.html", {"receipt": receipt})
