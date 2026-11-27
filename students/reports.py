@@ -2,7 +2,7 @@ from decimal import Decimal
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, Count, Q
 from django.http import HttpResponse
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 from .models import Student, StudentEnrollment, CourseRegistration, StudentCharge
@@ -194,7 +194,7 @@ def reports_home(request):
 @login_required
 def student_full_report(request, pk):
     from .models import StudentAcademicEvent
-    student = Student.objects.get(pk=pk)
+    student = get_object_or_404(Student, pk=pk)
     enrollments = StudentEnrollment.objects.filter(student=student).select_related("term").prefetch_related("course_registrations__course")
     events = StudentAcademicEvent.objects.filter(student=student).select_related("term", "recorded_by")
     charges = StudentCharge.objects.filter(student=student, is_cancelled=False).prefetch_related("payments")
