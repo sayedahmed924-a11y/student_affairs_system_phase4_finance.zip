@@ -2,6 +2,8 @@ from django import forms
 from .models import Student
 
 class StudentForm(forms.ModelForm):
+    # Snapshot of the record version loaded by the employee; used to reject stale forms.
+    version_token = forms.CharField(required=False, widget=forms.HiddenInput())
     reason = forms.CharField(label="سبب الإضافة أو التعديل", widget=forms.Textarea(attrs={"rows": 2}))
     source_document = forms.FileField(label="مستند مؤيد (اختياري)", required=False)
     class Meta:
