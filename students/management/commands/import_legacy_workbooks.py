@@ -12,7 +12,7 @@ from students.models import FeeCatalog, Student
 def norm(value):
     text = str(value or "").strip().lower()
     text = text.replace("أ", "ا").replace("إ", "ا").replace("آ", "ا").replace("ى", "ي")
-    text = re.sub(r"[\\s_\\-./:()]+", "", text)
+    text = re.sub(r"[\s_\-./:()]+", "", text)
     return text
 
 
@@ -46,7 +46,7 @@ def decimal_value(value):
     if isinstance(value, (int, float, Decimal)):
         return Decimal(str(value))
     cleaned = str(value).replace(",", "").replace("$", "").replace("جنيه", "").replace("دولار", "").strip()
-    match = re.search(r"-?\\d+(?:\\.\\d+)?", cleaned)
+    match = re.search(r"-?\d+(?:\.\d+)?", cleaned)
     if not match:
         return None
     try:
