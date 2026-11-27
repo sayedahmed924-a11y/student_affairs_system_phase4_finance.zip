@@ -129,8 +129,16 @@ class Command(BaseCommand):
                             "address": str(data.get("address") or "").strip(),
                         }
                         defaults = {k: v for k, v in defaults.items() if v}
+                        existing = Student.objects.filter(university_id=uid).first()
+                        conflicting_name = bool(existing and existing.full_name and defaults.get("full_name")
+                            and norm(existing.full_name) != norm(defaults["full_name"]))
+                        conflicting_program = bool(existing and existing.program and defaults.get("program")
+                            and norm(existing.program) != norm(defaults["program"]))
+                        if conflicting_name or conflicting_program:
+                            totals["skipped"] += 1
+                            continue
                         if options["dry_run"]:
-                            totals["students_updated" if Student.objects.filter(university_id=uid).exists() else "students_created"] += 1
+                            totals["students_updated" if existing else "students_created"] += 1
                         else:
                             with transaction.atomic():
                                 obj, created = Student.objects.update_or_create(university_id=uid, defaults=defaults)
