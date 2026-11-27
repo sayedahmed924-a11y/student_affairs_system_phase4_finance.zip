@@ -24,6 +24,7 @@ def _backup_files():
             files.append({
                 "name": path.name,
                 "size": path.stat().st_size,
+                "kind": "ملفات المستندات" if path.name.endswith("_media.tar.gz") else "قاعدة البيانات",
                 "created": timezone.datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.get_current_timezone()),
             })
     return sorted(files, key=lambda item: item["created"], reverse=True)
