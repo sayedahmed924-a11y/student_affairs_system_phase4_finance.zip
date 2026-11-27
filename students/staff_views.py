@@ -42,7 +42,7 @@ ROLE_DEFINITIONS = {
     "الشؤون الأكاديمية": {
         "label": "موظف الشؤون الأكاديمية ورصد النتائج",
         "permissions": [
-            "view_student", "view_academicterm", "view_course",
+            "view_student", "view_academicterm", "add_academicterm", "view_course", "add_course",
             "view_studentenrollment", "add_studentenrollment",
             "view_courseregistration", "add_courseregistration",
             "change_courseregistration", "view_studentacademicevent",
