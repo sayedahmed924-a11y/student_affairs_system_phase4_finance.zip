@@ -1,7 +1,13 @@
-{% extends "base.html" %}{% block content %}<div class="actions"><a class="btn" href="{% url 'students:transcript' student.pk %}">كشف الدرجات والساعات</a><a class="btn secondary" href="{% url 'students:student_full_report' student.pk %}">التقرير الشامل</a><a class="btn secondary" href="{% url 'students:student_financial_statement' student.pk %}">كشف الحساب المالي</a><a class="btn secondary" href="{% url 'students:reenrollment_add' %}">إعادة قيد طالب</a></div><h1>ملف الطالب</h1><div class="card"><h2>{{ student.full_name }}</h2>
+{% extends "base.html" %}{% block content %}<div class="actions">
+{% if perms.students.view_courseregistration %}<a class="btn" href="{% url 'students:transcript' student.pk %}">كشف الدرجات والساعات</a>{% endif %}
+{% if perms.students.view_courseregistration and perms.students.view_studentcharge and perms.students.view_studentenrollment and perms.students.view_studentacademicevent %}<a class="btn secondary" href="{% url 'students:student_full_report' student.pk %}">التقرير الشامل</a>{% endif %}
+{% if perms.students.view_studentcharge and perms.students.view_paymentreceipt %}<a class="btn secondary" href="{% url 'students:student_financial_statement' student.pk %}">كشف الحساب المالي</a>{% endif %}
+{% if perms.students.add_studentenrollment %}<a class="btn secondary" href="{% url 'students:reenrollment_add' %}">إعادة قيد طالب</a>{% endif %}
+{% if perms.students.change_student %}<a class="btn" href="{% url 'students:edit' student.pk %}">تعديل البيانات</a>{% endif %}
+</div><h1>ملف الطالب</h1><div class="card"><h2>{{ student.full_name }}</h2>
 <p><b>الرقم الجامعي:</b> {{ student.university_id }}</p><p><b>الرقم القومي:</b> {{ student.national_id|default:"—" }}</p>
 <p><b>الجنسية:</b> {{ student.nationality }}</p><p><b>الهاتف:</b> {{ student.phone }}</p><p><b>العنوان:</b> {{ student.address }}</p>
 <p><b>الفرقة:</b> {{ student.academic_year }} | <b>القسم:</b> {{ student.department }} | <b>الشعبة:</b> {{ student.division }}</p>
-<p><b>الحالة:</b> {{ student.get_study_status_display }}</p><a class="btn" href="/students/{{ student.pk }}/edit/">تعديل البيانات</a></div>
+<p><b>الحالة:</b> {{ student.get_study_status_display }}</p></div>
 <div class="card" style="margin-top:18px"><h2>سجل تعديلات الطالب</h2><table><tr><th>الحقل</th><th>قبل</th><th>بعد</th><th>الموظف</th><th>السبب</th><th>التاريخ</th></tr>
 {% for l in logs %}<tr><td>{{ l.field_name|default:l.get_action_display }}</td><td>{{ l.old_value|truncatechars:60 }}</td><td>{{ l.new_value|truncatechars:60 }}</td><td>{{ l.employee }}</td><td>{{ l.reason }}</td><td>{{ l.created_at|date:"Y-m-d H:i" }}</td></tr>{% empty %}<tr><td colspan="6">لا يوجد سجل.</td></tr>{% endfor %}</table></div>{% endblock %}
