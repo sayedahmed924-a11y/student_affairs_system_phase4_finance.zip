@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}التقرير الشامل للطالب{% endblock %}
 {% block content %}
-<div class="actions"><a class="btn secondary" href="{% url 'students:detail' student.pk %}">العودة لملف الطالب</a><button type="button" onclick="window.print()">طباعة / PDF</button></div>
+<div class="actions"><a class="btn secondary" href="{% url 'students:detail' student.pk %}">العودة لملف الطالب</a>{% if perms.students.print_reports %}<button type="button" onclick="window.print()">طباعة / PDF</button>{% endif %}</div>
 <h1>التقرير الشامل للطالب</h1>
 <div class="card">
 <h2>{{ student.full_name }}</h2>
