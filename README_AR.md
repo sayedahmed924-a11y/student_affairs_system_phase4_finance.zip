@@ -178,6 +178,7 @@ python manage.py test students
 ### النسخ التلقائي
 - خدمة Docker باسم backup تنشئ نسخة عند بدء الخدمة، ثم تكرر النسخ كل 24 ساعة افتراضيًا.
 - تحفظ النسخ في وحدة Docker مستقلة باسم backup_data، ومجلدها داخل الحاويات /app/backups.
+- تتكون كل نقطة استعادة من ملف قاعدة البيانات (.dump أو .sqlite3) وملف مستندات مطابق باللاحقة _media.tar.gz؛ يجب الاحتفاظ بالملفين معًا.
 - يتحقق النظام من سلامة النسخة بعد إنشائها: فحص أرشيف PostgreSQL أو PRAGMA integrity_check في SQLite.
 - يحتفظ النظام بالنسخ لمدة 30 يومًا افتراضيًا ويحذف الأقدم تلقائيًا.
 - يمكن تغيير المدة والفاصل الزمني من ملف .env باستخدام BACKUP_RETENTION_DAYS=30 وBACKUP_INTERVAL_SECONDS=86400 وBACKUP_DIR=/app/backups.
