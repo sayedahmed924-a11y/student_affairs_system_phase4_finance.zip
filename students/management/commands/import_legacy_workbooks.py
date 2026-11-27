@@ -18,12 +18,14 @@ def norm(value):
 
 ALIASES = {
     "student_id": {"كودالطالب", "الرقمالجامعي", "كود", "universityid", "studentid", "studentcode"},
-    "financial_code": {"الكودالمالي", "كودمالي", "financecode", "financialcode"},
+    "financial_code": {"الكودالمالي", "كودمالي", "كودالطالب للمصروفات", "financecode", "financialcode"},
     "name": {"الاسم", "اسمالطالب", "اسم", "fullname", "studentname"},
     "nationality": {"الجنسية", "nationality"},
     "level": {"المستويالدراسي", "المستوي", "الفرقة", "الفرقه", "academicyear", "level", "year"},
     "department": {"القسم", "الشعبة", "department"},
     "program": {"البرنامج", "program"},
+    "phone": {"التليفون", "الهاتف", "رقمالهاتف", "phone"},
+    "address": {"العنوان", "address"},
     "service": {"نوعالخدمة", "الخدمة", "بيانالخدمة", "service", "servicetype"},
     "amount": {"المبلغبالارقام", "سعرالخدمةبالدولار", "المبلغ", "القيمة", "amount", "price"},
     "amount_words": {"المبلغبالحروف", "المبلغكتابة", "amountwords"},
@@ -101,7 +103,7 @@ class Command(BaseCommand):
                         field = header_key(value)
                         if field and field not in mapping:
                             mapping[field] = col
-                    if len(mapping) >= 2 and ("student_id" in mapping or "service" in mapping):
+                    if len(mapping) >= 2 and ("student_id" in mapping or "service" in mapping or "amount" in mapping):
                         header = (index, mapping)
                         break
                 if not header:
@@ -119,10 +121,12 @@ class Command(BaseCommand):
                         defaults = {
                             "full_name": str(data["name"]).strip(),
                             "nationality": str(data.get("nationality") or "").strip(),
-                            "academic_year": str(data.get("level") or "").strip(),
+                            "academic_year": str(data.get("level") or (sheet.title if sheet.title not in ("Sheet1", "Sheet2", "Sheet3", "Sheet6") else "")).strip(),
                             "department": str(data.get("department") or "").strip(),
                             "financial_code": str(data.get("financial_code") or "").strip(),
-                            "program": str(data.get("program") or "").strip(),
+                            "program": str(data.get("program") or ("بترول" if "بترول" in path.name else "مناجم" if "مناجم" in path.name else "")).strip(),
+                            "phone": str(data.get("phone") or "").strip(),
+                            "address": str(data.get("address") or "").strip(),
                         }
                         defaults = {k: v for k, v in defaults.items() if v}
                         if options["dry_run"]:
@@ -131,7 +135,10 @@ class Command(BaseCommand):
                             with transaction.atomic():
                                 obj, created = Student.objects.update_or_create(university_id=uid, defaults=defaults)
                             totals["students_created" if created else "students_updated"] += 1
-                    if "service" in mapping and data.get("service"):
+                    service_name = data.get("service")
+                    if not service_name and category == "expat_club" and "amount" in mapping:
+                        service_name = "رسوم نادي الوافدين"
+                    if "amount" in mapping and service_name:
                         amount = decimal_value(data.get("amount"))
                         if amount is None or amount <= 0:
                             totals["skipped"] += 1
@@ -142,13 +149,13 @@ class Command(BaseCommand):
                             "source_workbook": path.name,
                             "source_sheet": sheet.title,
                         }
-                        exists = FeeCatalog.objects.filter(category=category, name=str(data["service"]).strip(),
+                        exists = FeeCatalog.objects.filter(category=category, name=str(service_name).strip(),
                             amount=amount, currency=currency).exists()
                         if options["dry_run"]:
                             totals["fees_existing" if exists else "fees_created"] += 1
                         else:
                             _, created = FeeCatalog.objects.update_or_create(
-                                category=category, name=str(data["service"]).strip(), amount=amount, currency=currency,
+                                category=category, name=str(service_name).strip(), amount=amount, currency=currency,
                                 defaults=fee_defaults)
                             totals["fees_created" if created else "fees_existing"] += 1
             workbook.close()
