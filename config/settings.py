@@ -54,7 +54,25 @@ TEMPLATES = [{
 }]
 WSGI_APPLICATION = "config.wsgi.application"
 
-if os.getenv("DB_HOST"):
+from urllib.parse import urlparse, parse_qs
+
+DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
+if DATABASE_URL:
+    parsed_db = urlparse(DATABASE_URL)
+    if parsed_db.scheme not in ("postgres", "postgresql"):
+        raise ImproperlyConfigured("DATABASE_URL must be a PostgreSQL URL.")
+    query = parse_qs(parsed_db.query)
+    DATABASES = {"default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": parsed_db.path.lstrip("/"),
+        "USER": parsed_db.username or "",
+        "PASSWORD": parsed_db.password or "",
+        "HOST": parsed_db.hostname or "",
+        "PORT": parsed_db.port or 5432,
+        "CONN_MAX_AGE": 60,
+        "OPTIONS": ({"sslmode": query["sslmode"][0]} if "sslmode" in query else {}),
+    }}
+elif os.getenv("DB_HOST"):
     DATABASES = {"default": {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": os.getenv("DB_NAME", "student_affairs"),
