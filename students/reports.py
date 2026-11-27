@@ -1,5 +1,6 @@
 from decimal import Decimal
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
+from django.core.exceptions import PermissionDenied
 from django.db.models import Sum, Count, Q
 from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404
@@ -64,6 +65,16 @@ def _filtered_registrations(request):
 @login_required
 def reports_home(request):
     kind, students, enrollments = _filtered(request)
+    required_permissions = {
+        "students": ("students.view_student",),
+        "enrollments": ("students.view_studentenrollment",),
+        "grades": ("students.view_courseregistration",),
+        "success": ("students.view_courseregistration",),
+        "finance": ("students.view_studentcharge",),
+    }
+    for permission in required_permissions.get(kind, ("students.view_student",)):
+        if not request.user.has_perm(permission):
+            raise PermissionDenied
     rows, headers = [], []
     title = "تقرير بيانات الطلاب"
     stats = {}
@@ -192,6 +203,11 @@ def reports_home(request):
 
 
 @login_required
+@permission_required("students.view_student", raise_exception=True)
+@permission_required("students.view_studentenrollment", raise_exception=True)
+@permission_required("students.view_courseregistration", raise_exception=True)
+@permission_required("students.view_studentacademicevent", raise_exception=True)
+@permission_required("students.view_studentcharge", raise_exception=True)
 def student_full_report(request, pk):
     from .models import StudentAcademicEvent
     student = get_object_or_404(Student, pk=pk)
@@ -217,6 +233,8 @@ def student_full_report(request, pk):
 
 
 @login_required
+@permission_required("students.view_studentcharge", raise_exception=True)
+@permission_required("students.view_paymentreceipt", raise_exception=True)
 def student_financial_statement(request, pk):
     from .models import PaymentReceipt
     student = Student.objects.get(pk=pk)
