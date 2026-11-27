@@ -16,17 +16,17 @@
   <h2>النسخ المحفوظة</h2>
   <div style="overflow:auto">
     <table>
-      <thead><tr><th>اسم الملف</th><th>الحجم</th><th>تاريخ الإنشاء</th><th>تنزيل</th></tr></thead>
+      <thead><tr><th>نوع النسخة</th><th>اسم الملف</th><th>الحجم</th><th>تاريخ الإنشاء</th><th>تنزيل</th></tr></thead>
       <tbody>
       {% for item in backup_files %}
         <tr>
-          <td>{{ item.name }}</td>
+          <td>{{ item.kind }}</td><td>{{ item.name }}</td>
           <td>{{ item.size|filesizeformat }}</td>
           <td>{{ item.created|date:"Y-m-d H:i" }}</td>
           <td><a href="{% url 'students:download_backup' item.name %}">تنزيل النسخة</a></td>
         </tr>
       {% empty %}
-        <tr><td colspan="4">لا توجد نسخ احتياطية حتى الآن. أنشئ نسخة الآن أو انتظر موعد النسخ التلقائي.</td></tr>
+        <tr><td colspan="5">لا توجد نسخ احتياطية حتى الآن. أنشئ نسخة الآن أو انتظر موعد النسخ التلقائي.</td></tr>
       {% endfor %}
       </tbody>
     </table>
