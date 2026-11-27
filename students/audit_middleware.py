@@ -43,14 +43,14 @@ class SystemAuditMiddleware:
                         )
                     elif (
                         request.method == "POST"
-                        and request.path.startswith("/students/backups/")
+                        and getattr(request, "_audit_action", "")
                         and 200 <= response.status_code < 400
                     ):
                         SystemAuditEvent.objects.create(
                             user=user,
                             actor_username=user.get_username()[:150],
                             module="backups",
-                            action="إنشاء نسخة احتياطية",
+                            action=request._audit_action[:100],
                             path=request.path[:500],
                             method=request.method,
                             status_code=response.status_code,
