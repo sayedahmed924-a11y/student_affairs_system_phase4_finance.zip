@@ -14,11 +14,22 @@ from .models import StudentCharge, PaymentReceipt
 
 @login_required
 def dashboard(request):
+    active_students = Student.objects.filter(is_archived=False)
+    total = active_students.count()
+    status_stats = []
+    for value, label in Student.STATUS:
+        count = active_students.filter(study_status=value).count()
+        status_stats.append({
+            "label": label,
+            "count": count,
+            "percent": round((count * 100 / total), 1) if total else 0,
+        })
     return render(request, "students/dashboard.html", {
-        "total": Student.objects.filter(is_archived=False).count(),
-        "new_count": Student.objects.filter(study_status="new", is_archived=False).count(),
+        "total": total,
+        "new_count": active_students.filter(study_status="new").count(),
         "pending": ImportBatch.objects.filter(status="preview").count(),
         "recent": AuditLog.objects.select_related("student", "employee")[:8],
+        "status_stats": status_stats,
     })
 
 @login_required
