@@ -54,6 +54,20 @@ class Command(BaseCommand):
             if not target.exists() or target.stat().st_size == 0:
                 target.unlink(missing_ok=True)
                 raise CommandError("ملف النسخة الاحتياطية فارغ؛ لم يتم اعتماد النسخة.")
+            if engine.endswith("postgresql"):
+                subprocess.run(
+                    ["pg_restore", "--list", str(target)],
+                    check=True, capture_output=True, text=True,
+                )
+            else:
+                check_db = sqlite3.connect(str(target))
+                try:
+                    integrity = check_db.execute("PRAGMA integrity_check").fetchone()[0]
+                finally:
+                    check_db.close()
+                if integrity != "ok":
+                    target.unlink(missing_ok=True)
+                    raise CommandError(f"فشل فحص سلامة نسخة SQLite: {integrity}")
 
             retention_days = int(os.getenv("BACKUP_RETENTION_DAYS", "30"))
             cutoff = timezone.now() - timedelta(days=max(1, retention_days))
