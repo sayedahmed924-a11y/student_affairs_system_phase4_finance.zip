@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}التقارير والإحصائيات{% endblock %}
+{% block content %}
+<h1>التقارير والإحصائيات</h1>
+<form method="get" class="card">
+<label>نوع التقرير</label><select name="type"><option value="students" {% if kind == "students" %}selected{% endif %}>بيانات الطلاب</option><option value="grades" {% if kind == "grades" %}selected{% endif %}>الدرجات والنتائج</option><option value="finance" {% if kind == "finance" %}selected{% endif %}>الرسوم والمتأخرات</option></select>
+<div class="grid">
+<div><label>العام الجامعي</label><select name="year"><option value="">كل الأعوام</option>{% for y in years %}<option value="{{ y }}" {% if filters.year == y %}selected{% endif %}>{{ y }}</option>{% endfor %}</select></div>
+<div><label>الفصل الدراسي</label><select name="semester"><option value="">كل الفصول</option><option value="first" {% if filters.semester == "first" %}selected{% endif %}>الأول</option><option value="second" {% if filters.semester == "second" %}selected{% endif %}>الثاني</option><option value="summer" {% if filters.semester == "summer" %}selected{% endif %}>الصيفي</option></select></div>
+<div><label>القسم</label><select name="department"><option value="">كل الأقسام</option>{% for d in departments %}<option value="{{ d }}" {% if filters.department == d %}selected{% endif %}>{{ d }}</option>{% endfor %}</select></div>
+<div><label>الفرقة</label><select name="level"><option value="">كل الفرق</option>{% for l in levels %}<option value="{{ l }}" {% if filters.level == l %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+<div><label>الحالة</label><select name="status"><option value="">كل الحالات</option>{% if kind == "grades" %}<option value="passed">ناجح</option><option value="failed">راسب</option><option value="pending">لم ترصد</option><option value="withdrawn">منسحب</option>{% else %}<option value="new">مستجد</option><option value="continuing">باقٍ</option><option value="graduated">خريج</option><option value="withdrawn">منسحب</option><option value="dismissed">مفصول</option><option value="suspended">موقوف</option>{% endif %}</select></div>
+</div><div class="actions"><button type="submit">عرض التقرير</button><button type="submit" name="export" value="xlsx">تصدير Excel</button><button type="button" class="secondary" onclick="window.print()">طباعة / حفظ PDF</button></div>
+</form>
+<div class="card" style="margin-top:16px"><strong>{{ title }}</strong><p class="muted">عدد السجلات: {{ count }}</p>
+<div style="overflow:auto"><table><thead><tr>{% for h in headers %}<th>{{ h }}</th>{% endfor %}</tr></thead><tbody>{% for row in rows %}<tr>{% for value in row %}<td>{{ value|default:"—" }}</td>{% endfor %}</tr>{% empty %}<tr><td colspan="{{ headers|length }}">لا توجد بيانات مطابقة للفلاتر.</td></tr>{% endfor %}</tbody></table></div></div>
+<style>@media print{header,form,.actions{display:none!important}.wrap{max-width:none;margin:0;padding:0}.card{box-shadow:none;border:0}table{font-size:10px}th,td{padding:5px}}</style>
+{% endblock %}
