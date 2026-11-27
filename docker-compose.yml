@@ -44,6 +44,7 @@ services:
       web:
         condition: service_healthy
     volumes:
+      - media_data:/app/media:ro
       - backup_data:/app/backups
 
 volumes:
