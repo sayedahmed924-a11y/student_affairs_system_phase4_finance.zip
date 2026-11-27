@@ -29,7 +29,7 @@ def dashboard(request):
         "total": total,
         "new_count": active_students.filter(study_status="new").count(),
         "pending": ImportBatch.objects.filter(status="preview").count(),
-        "recent": AuditLog.objects.select_related("student", "employee")[:8],
+        "recent": AuditLog.objects.select_related("student", "employee")[:8] if request.user.has_perm("students.view_auditlog") else [],
         "status_stats": status_stats,
     })
 
