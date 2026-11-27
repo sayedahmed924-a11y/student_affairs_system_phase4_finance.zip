@@ -192,9 +192,9 @@ python manage.py test students
 ### الاستعادة
 الاستعادة عملية تستبدل بيانات قاعدة البيانات؛ لذلك لا توجد استعادة مباشرة من المتصفح. يجب أولًا إيقاف خدمة الويب لمنع الكتابة أثناء الاستعادة، ثم تنفيذ الأوامر من مجلد المشروع:
 
-    docker compose stop web
-    docker compose run --rm web python manage.py restore_database student_affairs_YYYYMMDD_HHMMSS.dump --confirm RESTORE
-    docker compose up -d web
+    docker compose stop web backup
+    docker compose run --rm --no-deps web python manage.py restore_database student_affairs_YYYYMMDD_HHMMSS.dump --confirm RESTORE
+    docker compose up -d web backup
 
 لنسخة SQLite استخدم اسم الملف ذي الامتداد .sqlite3 بدل .dump. ينشئ أمر الاستعادة نسخة أمان إضافية من قاعدة البيانات الحالية قبل الاستبدال. في PostgreSQL تتم الاستعادة داخل معاملة واحدة مع إيقاف العملية عند أول خطأ.
 
