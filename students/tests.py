@@ -82,3 +82,66 @@ class BackupAccessTests(TestCase):
             reverse("students:download_backup", kwargs={"filename": "not-a-backup.txt"})
         )
         self.assertEqual(response.status_code, 404)
+
+
+from django.contrib.auth.models import Permission
+from django.http import HttpResponse
+from django.test import RequestFactory
+
+from .audit_middleware import SystemAuditMiddleware
+from .models import SystemAuditEvent
+
+
+class CentralAuditTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="audit_operator",
+            password="Strong-Audit-Password-123!",
+        )
+        self.factory = RequestFactory()
+
+    def test_successful_authenticated_write_is_logged(self):
+        request = self.factory.post(
+            "/students/finance/payments/add/",
+            REMOTE_ADDR="192.168.1.25",
+            HTTP_USER_AGENT="LAN Workstation",
+        )
+        request.user = self.user
+        middleware = SystemAuditMiddleware(lambda _request: HttpResponse(status=302))
+        response = middleware(request)
+
+        self.assertEqual(response.status_code, 302)
+        event = SystemAuditEvent.objects.get()
+        self.assertEqual(event.actor_username, "audit_operator")
+        self.assertEqual(event.module, "finance")
+        self.assertEqual(event.method, "POST")
+        self.assertEqual(event.ip_address, "192.168.1.25")
+        self.assertEqual(event.user_agent, "LAN Workstation")
+        self.assertEqual(event.status_code, 302)
+
+    def test_read_request_is_not_logged(self):
+        request = self.factory.get("/students/finance/")
+        request.user = self.user
+        middleware = SystemAuditMiddleware(lambda _request: HttpResponse(status=200))
+        middleware(request)
+        self.assertEqual(SystemAuditEvent.objects.count(), 0)
+
+    def test_failed_request_is_not_logged(self):
+        request = self.factory.post("/students/finance/payments/add/")
+        request.user = self.user
+        middleware = SystemAuditMiddleware(lambda _request: HttpResponse(status=400))
+        middleware(request)
+        self.assertEqual(SystemAuditEvent.objects.count(), 0)
+
+    def test_central_log_page_requires_permission(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("students:system_audit"))
+        self.assertEqual(response.status_code, 403)
+
+        permission = Permission.objects.get(
+            content_type__app_label="students",
+            codename="view_systemauditevent",
+        )
+        self.user.user_permissions.add(permission)
+        response = self.client.get(reverse("students:system_audit"))
+        self.assertEqual(response.status_code, 200)
