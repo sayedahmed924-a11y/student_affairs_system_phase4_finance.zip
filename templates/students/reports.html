@@ -31,8 +31,8 @@
   </div>
   <div class="actions">
     <button type="submit">عرض التقرير</button>
-    <button type="submit" name="export" value="xlsx">تصدير Excel</button>
-    <button type="button" class="secondary" onclick="window.print()">طباعة / حفظ PDF</button>
+    {% if perms.students.export_reports %}<button type="submit" name="export" value="xlsx">تصدير Excel</button>{% endif %}
+    {% if perms.students.print_reports %}<button type="button" class="secondary" onclick="window.print()">طباعة / حفظ PDF</button>{% endif %}
     <a class="btn secondary" href="{% url 'students:reports' %}">مسح الفلاتر</a>
   </div>
 </form>
