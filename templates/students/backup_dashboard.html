@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}النسخ الاحتياطي والاستعادة{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><h1>النسخ الاحتياطي وحماية البيانات</h1><p>إدارة نسخ قاعدة بيانات شؤون الطلاب</p></div>
+</div>
+<div class="card">
+  <h2>إنشاء نسخة احتياطية الآن</h2>
+  <p>ينشئ النظام نسخة مستقلة من قاعدة البيانات ويحفظها في وحدة تخزين النسخ الاحتياطية.</p>
+  <form method="post">{% csrf_token %}
+    <button type="submit">إنشاء نسخة احتياطية الآن</button>
+  </form>
+  <p class="muted">تُنشأ نسخة تلقائية كل 24 ساعة من خلال خدمة النسخ الاحتياطي. مدة الاحتفاظ الافتراضية 30 يومًا.</p>
+</div>
+<div class="card" style="margin-top:18px">
+  <h2>النسخ المحفوظة</h2>
+  <div style="overflow:auto">
+    <table>
+      <thead><tr><th>اسم الملف</th><th>الحجم</th><th>تاريخ الإنشاء</th><th>تنزيل</th></tr></thead>
+      <tbody>
+      {% for item in backup_files %}
+        <tr>
+          <td>{{ item.name }}</td>
+          <td>{{ item.size|filesizeformat }}</td>
+          <td>{{ item.created|date:"Y-m-d H:i" }}</td>
+          <td><a href="{% url 'students:download_backup' item.name %}">تنزيل النسخة</a></td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="4">لا توجد نسخ احتياطية حتى الآن. أنشئ نسخة الآن أو انتظر موعد النسخ التلقائي.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+<div class="card" style="margin-top:18px">
+  <h2>استعادة نسخة احتياطية</h2>
+  <p><strong>تنبيه:</strong> الاستعادة تستبدل بيانات قاعدة البيانات الحالية. لا توجد استعادة من داخل المتصفح عمدًا لتجنب تشغيل عملية مدمرة أثناء استخدام الموظفين للنظام.</p>
+  <ol>
+    <li>أوقف خدمة الويب حتى لا يكتب المستخدمون بيانات أثناء الاستعادة: <code>docker compose stop web</code></li>
+    <li>نفّذ الأمر من مجلد المشروع، مع استبدال اسم الملف باسم نسخة موجودة:</li>
+  </ol>
+  <pre><code>docker compose run --rm web python manage.py restore_database student_affairs_YYYYMMDD_HHMMSS.dump --confirm RESTORE</code></pre>
+  <p>لقاعدة SQLite استخدم ملف .sqlite3 بدل .dump. بعد نجاح الاستعادة شغّل: <code>docker compose up -d web</code></p>
+  <p>احتفظ بنسخة إضافية خارج جهاز الخادم وعلى وسيط منفصل؛ فالنسخ داخل وحدة التخزين نفسها لا تحمي من تلف القرص أو فقدانه.</p>
+</div>
+{% endblock %}
