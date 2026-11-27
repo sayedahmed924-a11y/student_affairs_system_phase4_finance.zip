@@ -189,3 +189,68 @@ def reports_home(request):
         "levels": levels, "years": years, "kind": kind, "count": len(rows),
         "filters": request.GET, "stats": stats,
     })
+
+
+@login_required
+def student_full_report(request, pk):
+    from .models import StudentAcademicEvent
+    student = Student.objects.get(pk=pk)
+    enrollments = StudentEnrollment.objects.filter(student=student).select_related("term").prefetch_related("course_registrations__course")
+    events = StudentAcademicEvent.objects.filter(student=student).select_related("term", "recorded_by")
+    charges = StudentCharge.objects.filter(student=student, is_cancelled=False).prefetch_related("payments")
+    due = sum((c.amount for c in charges), Decimal("0"))
+    paid = sum((c.paid_amount for c in charges), Decimal("0"))
+    registrations = CourseRegistration.objects.filter(enrollment__student=student)
+    context = {
+        "student": student,
+        "enrollments": enrollments,
+        "events": events,
+        "charges": charges,
+        "total_due": due,
+        "total_paid": paid,
+        "balance": due - paid,
+        "registrations_count": registrations.count(),
+        "passed_count": registrations.filter(result_status="passed").count(),
+        "failed_count": registrations.filter(result_status="failed").count(),
+    }
+    return render(request, "students/student_full_report.html", context)
+
+
+@login_required
+def student_financial_statement(request, pk):
+    from .models import PaymentReceipt
+    student = Student.objects.get(pk=pk)
+    charges = StudentCharge.objects.filter(student=student, is_cancelled=False)
+    receipts = PaymentReceipt.objects.filter(charge__student=student, is_voided=False).select_related("charge")
+    entries = []
+    for charge in charges:
+        entries.append({
+            "date": charge.created_at,
+            "kind": "استحقاق",
+            "description": charge.title,
+            "reference": "",
+            "debit": charge.amount,
+            "credit": Decimal("0"),
+        })
+    for receipt in receipts:
+        entries.append({
+            "date": receipt.received_at,
+            "kind": "سداد",
+            "description": receipt.charge.title,
+            "reference": receipt.receipt_number,
+            "debit": Decimal("0"),
+            "credit": receipt.amount,
+        })
+    entries.sort(key=lambda item: (item["date"], item["kind"] == "سداد"))
+    running_balance = Decimal("0")
+    total_debit = Decimal("0")
+    total_credit = Decimal("0")
+    for entry in entries:
+        total_debit += entry["debit"]
+        total_credit += entry["credit"]
+        running_balance += entry["debit"] - entry["credit"]
+        entry["balance"] = running_balance
+    return render(request, "students/student_financial_statement.html", {
+        "student": student, "entries": entries, "total_debit": total_debit,
+        "total_credit": total_credit, "balance": running_balance,
+    })
