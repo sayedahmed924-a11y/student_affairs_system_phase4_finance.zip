@@ -1,7 +1,9 @@
 import os
+import re
 import sqlite3
 import subprocess
 import tarfile
+from collections import defaultdict
 from datetime import timedelta
 from pathlib import Path
 
@@ -11,8 +13,45 @@ from django.db import connection
 from django.utils import timezone
 
 
+BACKUP_PATTERN = re.compile(
+    r"^(student_affairs_(?P<stamp>\d{8}_\d{6}))(?P<suffix>\.(?:dump|sqlite3)|_media\.tar\.gz)$"
+)
+
+
+def prune_backups(backup_dir, retention_days, retention_count):
+    """Prune complete database/media backup sets, never unrelated files."""
+    grouped = defaultdict(list)
+    for path in backup_dir.iterdir():
+        if path.is_file():
+            match = BACKUP_PATTERN.fullmatch(path.name)
+            if match:
+                grouped[match.group("stamp")].append(path)
+
+    now = timezone.now()
+    cutoff = now - timedelta(days=retention_days)
+    complete_sets = []
+    for stamp, files in grouped.items():
+        database_files = [p for p in files if p.suffix in {".dump", ".sqlite3"}]
+        media_files = [p for p in files if p.name.endswith("_media.tar.gz")]
+        if len(database_files) == 1 and len(media_files) == 1:
+            modified = max(p.stat().st_mtime for p in files)
+            created = timezone.datetime.fromtimestamp(
+                modified, tz=timezone.get_current_timezone()
+            )
+            complete_sets.append((created, files))
+
+    complete_sets.sort(key=lambda item: item[0], reverse=True)
+    removed = 0
+    for index, (created, files) in enumerate(complete_sets):
+        if created < cutoff or index >= retention_count:
+            for path in files:
+                path.unlink(missing_ok=True)
+                removed += 1
+    return removed
+
+
 class Command(BaseCommand):
-    help = "Create verified database and media backups and prune expired files."
+    help = "Create verified database and media backups and prune expired backup sets."
 
     def handle(self, *args, **options):
         backup_dir = Path(getattr(settings, "BACKUP_DIR", settings.BASE_DIR / "backups"))
@@ -97,19 +136,12 @@ class Command(BaseCommand):
                                 pass
 
             retention_days = max(1, int(os.getenv("BACKUP_RETENTION_DAYS", "30")))
-            cutoff = timezone.now() - timedelta(days=retention_days)
-            removed = 0
-            for old in backup_dir.iterdir():
-                if old.is_file() and old.name.startswith("student_affairs_"):
-                    if timezone.datetime.fromtimestamp(
-                        old.stat().st_mtime, tz=timezone.get_current_timezone()
-                    ) < cutoff:
-                        old.unlink()
-                        removed += 1
+            retention_count = max(1, int(os.getenv("BACKUP_RETENTION_COUNT", "30")))
+            removed = prune_backups(backup_dir, retention_days, retention_count)
 
             self.stdout.write(self.style.SUCCESS(
                 f"تم إنشاء نسخة قاعدة البيانات {db_target.name} ونسخة الملفات {media_target.name}. "
-                f"النسخ القديمة المحذوفة: {removed}"
+                f"ملفات النسخ المحذوفة: {removed}"
             ))
         except FileNotFoundError as exc:
             for path in created:
