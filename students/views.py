@@ -372,6 +372,7 @@ def event_add(request):
 
 @login_required
 @permission_required("students.view_student", raise_exception=True)
+@permission_required("students.view_courseregistration", raise_exception=True)
 def student_transcript(request, pk):
     student = get_object_or_404(Student, pk=pk)
     enrollments = StudentEnrollment.objects.filter(student=student).select_related("term").prefetch_related("course_registrations__course")
