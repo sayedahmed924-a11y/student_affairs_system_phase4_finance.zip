@@ -19,7 +19,16 @@ label{font-weight:bold;font-size:14px}form p{margin:8px 0}.errorlist{color:#b91c
 @media(max-width:650px){header nav{display:flex;flex-wrap:wrap;gap:10px}table{display:block;overflow:auto}}
 </style></head>
 <body><header><strong>🎓 نظام شؤون الطلاب</strong><nav>
-<a href="/">الرئيسية</a><a href="/students/">الطلاب</a><a href="/students/add/">إضافة طالب</a><a href="/students/import/">Excel</a><a href="/students/audit/">سجل التعديلات</a><a href="/students/academic/">الشؤون الأكاديمية</a><a href="/students/finance/">الإدارة المالية</a><a href="/students/reports/">التقارير</a>
+{% if user.is_authenticated %}
+{% if user.has_perm:"students.view_student" %}<a href="/">الرئيسية</a><a href="/students/">الطلاب</a>{% endif %}
+{% if user.has_perm:"students.add_student" %}<a href="/students/add/">إضافة طالب</a>{% endif %}
+{% if user.has_perm:"students.add_importbatch" %}<a href="/students/import/">Excel</a>{% endif %}
+{% if user.has_perm:"students.view_auditlog" %}<a href="/students/audit/">سجل التعديلات</a>{% endif %}
+{% if user.has_perm:"students.view_academicterm" %}<a href="/students/academic/">الشؤون الأكاديمية</a>{% endif %}
+{% if user.has_perm:"students.view_studentcharge" %}<a href="/students/finance/">الإدارة المالية</a>{% endif %}
+{% if user.has_perm:"students.view_student" or user.has_perm:"students.view_studentcharge" or user.has_perm:"students.view_courseregistration" %}<a href="/students/reports/">التقارير</a>{% endif %}
+{% if user.is_superuser %}<a href="/students/staff-access/">الموظفون والصلاحيات</a>{% endif %}
+{% endif %}
 {% if user.is_authenticated %}<form method="post" action="/logout/" style="display:inline">{% csrf_token %}<button type="submit" style="background:transparent;padding:0;color:white">خروج</button></form>{% endif %}</nav></header>
 <div class="wrap">{% if messages %}{% for message in messages %}<div class="notice">{{ message }}</div>{% endfor %}{% endif %}
 {% block content %}{% endblock %}</div></body></html>
