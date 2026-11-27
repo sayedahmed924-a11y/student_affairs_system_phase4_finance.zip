@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
-from django.test import TestCase
+from django.test import TestCase, TransactionTestCase
 from django.urls import reverse
 
 from .staff_views import _ensure_roles
@@ -92,7 +92,7 @@ from .audit_middleware import SystemAuditMiddleware
 from .models import SystemAuditEvent, Student
 
 
-class CentralAuditTests(TestCase):
+class CentralAuditTests(TransactionTestCase):
     def setUp(self):
         self.user = User.objects.create_user(
             username="audit_operator",
