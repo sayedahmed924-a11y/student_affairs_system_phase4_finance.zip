@@ -1,10 +1,23 @@
 import os
 from pathlib import Path
 
+from django.core.exceptions import ImproperlyConfigured
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("SECRET_KEY", "unsafe-development-key-change-me")
 DEBUG = os.getenv("DEBUG", "0") == "1"
-ALLOWED_HOSTS = [x.strip() for x in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")]
+ALLOWED_HOSTS = [x.strip() for x in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if x.strip()]
+
+if not DEBUG:
+    if SECRET_KEY == "unsafe-development-key-change-me" or len(SECRET_KEY) < 50:
+        raise ImproperlyConfigured("Set a unique SECRET_KEY of at least 50 characters before production startup.")
+    if not ALLOWED_HOSTS or "*" in ALLOWED_HOSTS:
+        raise ImproperlyConfigured("Set explicit ALLOWED_HOSTS values; wildcard hosts are not allowed in production.")
+
+HTTPS_ENABLED = os.getenv("HTTPS_ENABLED", "0") == "1"
+CSRF_TRUSTED_ORIGINS = [
+    value.strip() for value in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if value.strip()
+]
 
 INSTALLED_APPS = [
     "django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes",
@@ -65,9 +78,25 @@ LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "dashboard"
 LOGOUT_REDIRECT_URL = "login"
 SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SECURE = HTTPS_ENABLED
+SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SECURE = HTTPS_ENABLED
+CSRF_COOKIE_SAMESITE = "Lax"
 SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = "same-origin"
+SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin"
+SECURE_SSL_REDIRECT = HTTPS_ENABLED
+SECURE_HSTS_SECONDS = int(os.getenv("SECURE_HSTS_SECONDS", "31536000" if HTTPS_ENABLED else "0"))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+SECURE_HSTS_PRELOAD = False
 X_FRAME_OPTIONS = "DENY"
+
+if os.getenv("TRUST_PROXY_SSL", "0") == "1":
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
+FILE_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024
 
 # Database backup storage (mounted separately from the application container).
 BACKUP_DIR = Path(os.getenv("BACKUP_DIR", str(BASE_DIR / "backups")))
