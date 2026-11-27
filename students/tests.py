@@ -281,3 +281,51 @@ class FinancialIntegrityTests(TestCase):
         })
         self.assertFalse(form.is_valid())
         self.assertIn("amount", form.errors)
+
+
+class BackupRetentionTests(TestCase):
+    def test_retention_removes_oldest_complete_sets_as_pairs(self):
+        import os
+        import tempfile
+        from pathlib import Path
+        from django.core.management import CommandError
+        from students.management.commands.backup_database import prune_backups
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            stamps = ["20260101_010101", "20260102_010101", "20260103_010101"]
+            for stamp in stamps:
+                (root / f"student_affairs_{stamp}.dump").write_bytes(b"database")
+                (root / f"student_affairs_{stamp}_media.tar.gz").write_bytes(b"media")
+
+            # Keep the newest two complete sets.
+            now = __import__("time").time()
+            for index, stamp in enumerate(stamps):
+                moment = now - (len(stamps) - index) * 60
+                for suffix in (".dump", "_media.tar.gz"):
+                    os.utime(root / f"student_affairs_{stamp}{suffix}", (moment, moment))
+
+            # An unrelated file must never be removed by retention.
+            unrelated = root / "important.txt"
+            unrelated.write_text("keep", encoding="utf-8")
+
+            removed = prune_backups(root, retention_days=365, retention_count=2)
+
+            self.assertEqual(removed, 2)
+            self.assertFalse((root / f"student_affairs_{stamps[0]}.dump").exists())
+            self.assertFalse((root / f"student_affairs_{stamps[0]}_media.tar.gz").exists())
+            self.assertTrue((root / f"student_affairs_{stamps[1]}.dump").exists())
+            self.assertTrue((root / f"student_affairs_{stamps[2]}_media.tar.gz").exists())
+            self.assertTrue(unrelated.exists())
+
+    def test_incomplete_backup_set_is_not_pruned(self):
+        import tempfile
+        from pathlib import Path
+        from students.management.commands.backup_database import prune_backups
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            orphan = root / "student_affairs_20260101_010101.dump"
+            orphan.write_bytes(b"database")
+            prune_backups(root, retention_days=1, retention_count=1)
+            self.assertTrue(orphan.exists())
