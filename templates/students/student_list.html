@@ -1,5 +1,5 @@
 {% extends "base.html" %}{% block content %}<h1>بيانات الطلاب</h1>
-<form method="get" class="card"><label>بحث بالرقم الجامعي أو الاسم أو الرقم القومي</label><input name="q" value="{{ q }}" placeholder="اكتب بيانات البحث"><button>بحث</button></form>
+<form method="get" class="card"><label>بحث بالرقم الجامعي أو الكود المالي أو الاسم أو الرقم القومي</label><input name="q" value="{{ q }}" placeholder="اكتب بيانات البحث"><button>بحث</button></form>
 <div class="actions"><a class="btn" href="/students/add/">إضافة طالب</a></div>
-<table><tr><th>الرقم الجامعي</th><th>اسم الطالب</th><th>الفرقة</th><th>القسم</th><th>الحالة</th><th></th></tr>
-{% for s in students %}<tr><td>{{ s.university_id }}</td><td>{{ s.full_name }}</td><td>{{ s.academic_year }}</td><td>{{ s.department }}</td><td>{{ s.get_study_status_display }}</td><td><a href="/students/{{ s.pk }}/">فتح الملف</a></td></tr>{% empty %}<tr><td colspan="6">لا توجد نتائج.</td></tr>{% endfor %}</table>{% endblock %}
+<table><tr><th>الرقم الجامعي</th><th>الكود المالي</th><th>اسم الطالب</th><th>البرنامج</th><th>الفرقة</th><th>القسم</th><th>الحالة</th><th></th></tr>
+{% for s in students %}<tr><td>{{ s.university_id }}</td><td>{{ s.financial_code }}</td><td>{{ s.full_name }}</td><td>{{ s.program }}</td><td>{{ s.academic_year }}</td><td>{{ s.department }}</td><td>{{ s.get_study_status_display }}</td><td><a href="/students/{{ s.pk }}/">فتح الملف</a></td></tr>{% empty %}<tr><td colspan="8">لا توجد نتائج.</td></tr>{% endfor %}</table>{% endblock %}
