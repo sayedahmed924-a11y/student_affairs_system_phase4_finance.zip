@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}سجل عمليات النظام{% endblock %}
+{% block content %}
+<h1>سجل عمليات النظام المركزي</h1>
+<p class="muted">يوثق هذا السجل العمليات التي نفذها الموظفون بعد تسجيل الدخول، مع القسم والوقت والجهاز ونتيجة الطلب. لا يتم تخزين كلمات المرور أو محتوى النماذج.</p>
+<div class="grid" style="margin-bottom:16px">
+  <div class="card"><div class="muted">عدد النتائج المطابقة</div><div class="num">{{ total_count }}</div></div>
+  <div class="card"><div class="muted">عدد العمليات في الصفحة</div><div class="num">{{ events|length }}</div></div>
+</div>
+<form method="get" class="card" style="margin-bottom:18px">
+  <div class="grid">
+    <div><label for="q">بحث (الموظف أو العملية أو المسار أو رقم السجل)</label><input id="q" name="q" value="{{ query }}" placeholder="اكتب كلمة البحث"></div>
+    <div><label for="module">القسم</label><select id="module" name="module"><option value="">كل الأقسام</option>{% for value,label in modules %}<option value="{{ value }}" {% if selected_module == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+    <div><label for="date_from">من تاريخ</label><input id="date_from" type="date" name="date_from" value="{{ date_from }}"></div>
+    <div><label for="date_to">إلى تاريخ</label><input id="date_to" type="date" name="date_to" value="{{ date_to }}"></div>
+  </div>
+  <div class="actions"><button type="submit">بحث وتصفية</button><a class="btn secondary" href="{% url 'students:system_audit' %}">مسح الفلاتر</a></div>
+</form>
+<div class="card" style="overflow-x:auto">
+<table>
+<thead><tr><th>التاريخ والوقت</th><th>الموظف</th><th>القسم</th><th>العملية</th><th>مرجع السجل</th><th>الطريقة</th><th>النتيجة</th><th>عنوان الجهاز</th><th>الجهاز / المتصفح</th></tr></thead>
+<tbody>
+{% for event in events %}
+<tr>
+<td>{{ event.created_at|date:"Y-m-d H:i:s" }}</td>
+<td>{{ event.actor_username }}</td>
+<td>{{ event.get_module_display }}</td>
+<td>{{ event.action }}<div class="muted" dir="ltr">{{ event.path }}</div></td>
+<td>{{ event.object_reference|default:"—" }}</td>
+<td dir="ltr">{{ event.method }}</td>
+<td>{{ event.status_code|default:"—" }}</td>
+<td dir="ltr">{{ event.ip_address|default:"—" }}</td>
+<td>{{ event.user_agent|default:"—"|truncatechars:65 }}</td>
+</tr>
+{% empty %}
+<tr><td colspan="9">لا توجد عمليات مطابقة للفلاتر الحالية.</td></tr>
+{% endfor %}
+</tbody></table>
+</div>
+<div class="actions" style="align-items:center">
+{% if page_obj.has_previous %}<a class="btn secondary" href="?q={{ query|urlencode }}&module={{ selected_module|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&page=1">الأولى</a><a class="btn secondary" href="?q={{ query|urlencode }}&module={{ selected_module|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&page={{ page_obj.previous_page_number }}">السابق</a>{% endif %}
+<span class="muted">صفحة {{ page_obj.number }} من {{ page_obj.paginator.num_pages }}</span>
+{% if page_obj.has_next %}<a class="btn secondary" href="?q={{ query|urlencode }}&module={{ selected_module|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&page={{ page_obj.next_page_number }}">التالي</a><a class="btn secondary" href="?q={{ query|urlencode }}&module={{ selected_module|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&page={{ page_obj.paginator.num_pages }}">الأخيرة</a>{% endif %}
+</div>
+{% endblock %}
