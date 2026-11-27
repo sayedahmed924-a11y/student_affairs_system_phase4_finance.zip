@@ -89,7 +89,7 @@ from django.http import HttpResponse
 from django.test import RequestFactory
 
 from .audit_middleware import SystemAuditMiddleware
-from .models import SystemAuditEvent
+from .models import SystemAuditEvent, Student
 
 
 class CentralAuditTests(TestCase):
@@ -107,13 +107,17 @@ class CentralAuditTests(TestCase):
             HTTP_USER_AGENT="LAN Workstation",
         )
         request.user = self.user
-        middleware = SystemAuditMiddleware(lambda _request: HttpResponse(status=302))
+        def save_student(_request):
+            Student.objects.create(university_id="AUD-001", full_name="طالب اختبار")
+            return HttpResponse(status=302)
+
+        middleware = SystemAuditMiddleware(save_student)
         response = middleware(request)
 
         self.assertEqual(response.status_code, 302)
         event = SystemAuditEvent.objects.get()
         self.assertEqual(event.actor_username, "audit_operator")
-        self.assertEqual(event.module, "finance")
+        self.assertEqual(event.module, "students")
         self.assertEqual(event.method, "POST")
         self.assertEqual(event.ip_address, "192.168.1.25")
         self.assertEqual(event.user_agent, "LAN Workstation")
