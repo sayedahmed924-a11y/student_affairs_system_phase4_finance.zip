@@ -8,8 +8,8 @@ class StudentForm(forms.ModelForm):
     source_document = forms.FileField(label="مستند مؤيد (اختياري)", required=False)
     class Meta:
         model = Student
-        fields = ["university_id", "full_name", "national_id", "nationality", "phone",
-                  "address", "academic_year", "department", "division", "study_status", "notes"]
+        fields = ["university_id", "financial_code", "full_name", "national_id", "nationality", "phone",
+                  "address", "academic_year", "department", "division", "program", "study_status", "notes"]
         widgets = {"address": forms.Textarea(attrs={"rows": 2}), "notes": forms.Textarea(attrs={"rows": 2})}
 
 class ImportForm(forms.Form):
