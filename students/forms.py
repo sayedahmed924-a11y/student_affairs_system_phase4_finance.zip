@@ -14,6 +14,12 @@ class ImportForm(forms.Form):
     file = forms.FileField(label="ملف Excel")
     reason = forms.CharField(label="سبب التحديث", widget=forms.Textarea(attrs={"rows": 2}))
 
+    def clean_file(self):
+        uploaded = self.cleaned_data["file"]
+        if uploaded.size > 10 * 1024 * 1024:
+            raise forms.ValidationError("حجم ملف Excel يتجاوز الحد المسموح (10 ميجابايت).")
+        return uploaded
+
 
 from .models import AcademicTerm, Course, StudentEnrollment, CourseRegistration, StudentAcademicEvent
 
