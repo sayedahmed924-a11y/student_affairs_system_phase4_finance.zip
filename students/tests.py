@@ -149,3 +149,131 @@ class CentralAuditTests(TransactionTestCase):
         self.user.user_permissions.add(permission)
         response = self.client.get(reverse("students:system_audit"))
         self.assertEqual(response.status_code, 200)
+
+
+
+from decimal import Decimal
+from django.utils import timezone
+from .models import StudentCharge, PaymentReceipt
+
+
+class ConcurrentStudentEditTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="student_editor",
+            password="Strong-Student-Edit-123!",
+        )
+        permission = Permission.objects.get(
+            content_type__app_label="students",
+            codename="change_student",
+        )
+        self.user.user_permissions.add(permission)
+        self.student = Student.objects.create(
+            university_id="CONC-001",
+            full_name="الاسم الأصلي",
+        )
+        self.client.force_login(self.user)
+
+    def test_stale_form_cannot_overwrite_newer_student_data(self):
+        page = self.client.get(reverse("students:edit", kwargs={"pk": self.student.pk}))
+        self.assertEqual(page.status_code, 200)
+        stale_token = page.context["form"]["version_token"].value()
+
+        self.student.full_name = "تعديل الموظف الأول"
+        self.student.save(update_fields=["full_name", "updated_at"])
+
+        response = self.client.post(
+            reverse("students:edit", kwargs={"pk": self.student.pk}),
+            {
+                "version_token": stale_token,
+                "university_id": self.student.university_id,
+                "full_name": "تعديل الموظف الثاني",
+                "national_id": "",
+                "nationality": "مصري",
+                "phone": "",
+                "address": "",
+                "academic_year": "",
+                "department": "",
+                "division": "",
+                "study_status": "new",
+                "notes": "",
+                "reason": "اختبار تعارض التعديل",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.student.refresh_from_db()
+        self.assertEqual(self.student.full_name, "تعديل الموظف الأول")
+        self.assertContains(response, "تم تعديل بيانات هذا الطالب بواسطة موظف آخر")
+
+    def test_current_version_can_be_saved(self):
+        page = self.client.get(reverse("students:edit", kwargs={"pk": self.student.pk}))
+        token = page.context["form"]["version_token"].value()
+        response = self.client.post(
+            reverse("students:edit", kwargs={"pk": self.student.pk}),
+            {
+                "version_token": token,
+                "university_id": self.student.university_id,
+                "full_name": "اسم محدث",
+                "national_id": "",
+                "nationality": "مصري",
+                "phone": "",
+                "address": "",
+                "academic_year": "",
+                "department": "",
+                "division": "",
+                "study_status": "new",
+                "notes": "",
+                "reason": "تعديل صحيح",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        self.student.refresh_from_db()
+        self.assertEqual(self.student.full_name, "اسم محدث")
+
+
+class FinancialIntegrityTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="finance_operator",
+            password="Strong-Finance-123!",
+        )
+        self.student = Student.objects.create(
+            university_id="FIN-001",
+            full_name="طالب مالي",
+        )
+        self.charge = StudentCharge.objects.create(
+            student=self.student,
+            title="رسوم اختبار",
+            amount=Decimal("100.00"),
+            created_by=self.user,
+        )
+
+    def test_receipt_number_is_unique(self):
+        PaymentReceipt.objects.create(
+            charge=self.charge,
+            receipt_number="REC-UNIQUE-001",
+            amount=Decimal("25.00"),
+            received_by=self.user,
+        )
+        form = PaymentReceiptForm(data={
+            "charge": self.charge.pk,
+            "receipt_number": "REC-UNIQUE-001",
+            "amount": "10.00",
+            "method": "cash",
+            "reference": "",
+            "notes": "",
+        })
+        self.assertFalse(form.is_valid())
+        self.assertIn("receipt_number", form.errors)
+
+    def test_non_positive_payment_is_rejected(self):
+        form = PaymentReceiptForm(data={
+            "charge": self.charge.pk,
+            "receipt_number": "REC-ZERO-001",
+            "amount": "0.00",
+            "method": "cash",
+            "reference": "",
+            "notes": "",
+        })
+        self.assertFalse(form.is_valid())
+        self.assertIn("amount", form.errors)
