@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}كشف الحساب المالي{% endblock %}
 {% block content %}
-<div class="actions"><a class="btn secondary" href="{% url 'students:detail' student.pk %}">العودة لملف الطالب</a><button type="button" onclick="window.print()">طباعة / PDF</button></div>
+<div class="actions"><a class="btn secondary" href="{% url 'students:detail' student.pk %}">العودة لملف الطالب</a>{% if perms.students.print_reports %}<button type="button" onclick="window.print()">طباعة / PDF</button>{% endif %}</div>
 <h1>كشف الحساب المالي للطالب</h1>
 <div class="card"><h2>{{ student.full_name }}</h2><p><b>الرقم الجامعي:</b> {{ student.university_id }}</p></div>
 <div class="grid" style="margin-top:16px">
