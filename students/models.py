@@ -269,3 +269,42 @@ class PaymentReceipt(models.Model):
 
     def __str__(self):
         return self.receipt_number
+
+
+class SystemAuditEvent(models.Model):
+    MODULES = [
+        ("students", "شؤون الطلاب"),
+        ("academic", "الشؤون الأكاديمية"),
+        ("finance", "الإدارة المالية"),
+        ("imports", "استيراد البيانات"),
+        ("users", "المستخدمون والصلاحيات"),
+        ("backups", "النسخ الاحتياطي"),
+        ("system", "النظام"),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="system_audit_events",
+        verbose_name="الموظف",
+    )
+    actor_username = models.CharField("اسم المستخدم وقت العملية", max_length=150, db_index=True)
+    module = models.CharField("القسم", max_length=20, choices=MODULES, db_index=True)
+    action = models.CharField("العملية", max_length=100)
+    path = models.CharField("مسار العملية", max_length=500)
+    object_reference = models.CharField("مرجع السجل", max_length=120, blank=True)
+    method = models.CharField("طريقة الطلب", max_length=10)
+    status_code = models.PositiveSmallIntegerField("كود الاستجابة", null=True, blank=True)
+    ip_address = models.GenericIPAddressField("عنوان الجهاز", null=True, blank=True)
+    user_agent = models.CharField("معلومات الجهاز والمتصفح", max_length=500, blank=True)
+    created_at = models.DateTimeField("تاريخ ووقت العملية", auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "عملية بالنظام"
+        verbose_name_plural = "سجل العمليات المركزي"
+        indexes = [
+            models.Index(fields=["module", "-created_at"], name="sysaudit_module_date"),
+        ]
+
+    def __str__(self):
+        return f"{self.actor_username} - {self.action} - {self.created_at:%Y-%m-%d %H:%M}"
