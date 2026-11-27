@@ -99,3 +99,23 @@ class PaymentReceiptAdmin(admin.ModelAdmin):
     def has_add_permission(self, request): return False
     def has_change_permission(self, request, obj=None): return False
     def has_delete_permission(self, request, obj=None): return False
+
+
+from .models import SystemAuditEvent
+
+@admin.register(SystemAuditEvent)
+class SystemAuditEventAdmin(admin.ModelAdmin):
+    list_display = ("created_at", "actor_username", "module", "action", "method", "status_code", "ip_address")
+    list_filter = ("module", "method", "status_code", "created_at")
+    search_fields = ("actor_username", "action", "path", "object_reference", "ip_address")
+    readonly_fields = [field.name for field in SystemAuditEvent._meta.fields]
+    date_hierarchy = "created_at"
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
