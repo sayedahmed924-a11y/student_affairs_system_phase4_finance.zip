@@ -36,11 +36,11 @@
   <h2>استعادة نسخة احتياطية</h2>
   <p><strong>تنبيه:</strong> الاستعادة تستبدل بيانات قاعدة البيانات الحالية. لا توجد استعادة من داخل المتصفح عمدًا لتجنب تشغيل عملية مدمرة أثناء استخدام الموظفين للنظام.</p>
   <ol>
-    <li>أوقف خدمة الويب حتى لا يكتب المستخدمون بيانات أثناء الاستعادة: <code>docker compose stop web</code></li>
+    <li>أوقف خدمة الويب حتى لا يكتب المستخدمون بيانات أثناء الاستعادة: <code>docker compose stop web backup</code></li>
     <li>نفّذ الأمر من مجلد المشروع، مع استبدال اسم الملف باسم نسخة موجودة:</li>
   </ol>
-  <pre><code>docker compose run --rm web python manage.py restore_database student_affairs_YYYYMMDD_HHMMSS.dump --confirm RESTORE</code></pre>
-  <p>لقاعدة SQLite استخدم ملف .sqlite3 بدل .dump. بعد نجاح الاستعادة شغّل: <code>docker compose up -d web</code></p>
+  <pre><code>docker compose run --rm --no-deps web python manage.py restore_database student_affairs_YYYYMMDD_HHMMSS.dump --confirm RESTORE</code></pre>
+  <p>لقاعدة SQLite استخدم ملف .sqlite3 بدل .dump. بعد نجاح الاستعادة شغّل: <code>docker compose up -d web backup</code></p>
   <p>احتفظ بنسخة إضافية خارج جهاز الخادم وعلى وسيط منفصل؛ فالنسخ داخل وحدة التخزين نفسها لا تحمي من تلف القرص أو فقدانه.</p>
 </div>
 {% endblock %}
