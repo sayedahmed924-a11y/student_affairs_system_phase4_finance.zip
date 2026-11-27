@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views, reports, staff_views, backup_views
+from . import views, reports, staff_views, backup_views, system_audit_views
 app_name = "students"
 urlpatterns = [
     path("", views.student_list, name="list"),
@@ -7,6 +7,7 @@ urlpatterns = [
     path("<int:pk>/", views.student_detail, name="detail"),
     path("<int:pk>/edit/", views.student_edit, name="edit"),
     path("audit/", views.audit_list, name="audit"),
+    path("system-audit/", system_audit_views.system_audit_list, name="system_audit"),
     path("reports/", reports.reports_home, name="reports"),
     path("staff-access/", staff_views.staff_access, name="staff_access"),
     path("backups/", backup_views.backup_dashboard, name="backup_dashboard"),
