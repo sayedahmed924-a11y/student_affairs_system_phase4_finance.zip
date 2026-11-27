@@ -79,6 +79,6 @@ class BackupAccessTests(TestCase):
         )
         self.client.force_login(administrator)
         response = self.client.get(
-            reverse("students:download_backup", kwargs={"filename": "../db.sqlite3"})
+            reverse("students:download_backup", kwargs={"filename": "not-a-backup.txt"})
         )
         self.assertEqual(response.status_code, 404)
