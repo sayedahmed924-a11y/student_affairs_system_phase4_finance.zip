@@ -153,8 +153,8 @@ class CentralAuditTests(TransactionTestCase):
 
 
 from decimal import Decimal
-from django.utils import timezone
 from .models import StudentCharge, PaymentReceipt
+from .forms import PaymentReceiptForm
 
 
 class ConcurrentStudentEditTests(TestCase):
