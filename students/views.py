@@ -539,7 +539,10 @@ def payment_add(request):
         except ValueError as exc:
             form.add_error(None, str(exc))
         except IntegrityError:
-            form.add_error("receipt_number", "رقم الإيصال مستخدم من قبل؛ لم يتم تسجيل إيصال مكرر.")
+            if PaymentReceipt.objects.filter(receipt_number=data["receipt_number"]).exists():
+                form.add_error("receipt_number", "رقم الإيصال مستخدم من قبل؛ لم يتم تسجيل إيصال مكرر.")
+            else:
+                raise
         else:
             messages.success(request, f"تم تسجيل السداد. رقم الإيصال: {receipt.receipt_number}")
             return redirect("students:receipt_list")
