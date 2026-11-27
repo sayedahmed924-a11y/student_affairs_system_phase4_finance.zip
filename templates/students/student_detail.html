@@ -1,6 +1,6 @@
 {% extends "base.html" %}{% block content %}<div class="actions">
 {% if perms.students.view_courseregistration %}<a class="btn" href="{% url 'students:transcript' student.pk %}">كشف الدرجات والساعات</a>{% endif %}
-{% if perms.students.view_courseregistration and perms.students.view_studentcharge and perms.students.view_studentenrollment and perms.students.view_studentacademicevent %}<a class="btn secondary" href="{% url 'students:student_full_report' student.pk %}">التقرير الشامل</a>{% endif %}
+{% if perms.students.view_courseregistration and perms.students.view_studentcharge and perms.students.view_studentenrollment and perms.students.view_studentacademicevent and perms.students.view_studentcharge and perms.students.view_paymentreceipt %}<a class="btn secondary" href="{% url 'students:student_full_report' student.pk %}">التقرير الشامل</a>{% endif %}
 {% if perms.students.view_studentcharge and perms.students.view_paymentreceipt %}<a class="btn secondary" href="{% url 'students:student_financial_statement' student.pk %}">كشف الحساب المالي</a>{% endif %}
 {% if perms.students.add_studentenrollment %}<a class="btn secondary" href="{% url 'students:reenrollment_add' %}">إعادة قيد طالب</a>{% endif %}
 {% if perms.students.change_student %}<a class="btn" href="{% url 'students:edit' student.pk %}">تعديل البيانات</a>{% endif %}
