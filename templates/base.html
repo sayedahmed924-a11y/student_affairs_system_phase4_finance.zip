@@ -23,7 +23,8 @@ label{font-weight:bold;font-size:14px}form p{margin:8px 0}.errorlist{color:#b91c
 {% if perms.students.view_student %}<a href="/">الرئيسية</a><a href="/students/">الطلاب</a>{% endif %}
 {% if perms.students.add_student %}<a href="/students/add/">إضافة طالب</a>{% endif %}
 {% if perms.students.add_importbatch %}<a href="/students/import/">Excel</a>{% endif %}
-{% if perms.students.view_auditlog %}<a href="/students/audit/">سجل التعديلات</a>{% endif %}
+{% if perms.students.view_auditlog %}<a href="/students/audit/">سجل تعديلات الطلاب</a>{% endif %}
+{% if perms.students.view_systemauditevent %}<a href="/students/system-audit/">سجل عمليات النظام</a>{% endif %}
 {% if perms.students.view_academicterm %}<a href="/students/academic/">الشؤون الأكاديمية</a>{% endif %}
 {% if perms.students.view_studentcharge %}<a href="/students/finance/">الإدارة المالية</a>{% endif %}
 {% if perms.students.view_student or perms.students.view_studentcharge or perms.students.view_courseregistration %}<a href="/students/reports/">التقارير</a>{% endif %}
