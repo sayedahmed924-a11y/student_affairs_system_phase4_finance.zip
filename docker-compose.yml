@@ -21,6 +21,12 @@ services:
     command: sh -c "python manage.py migrate --fake-initial --noinput && python manage.py collectstatic --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3"
     ports:
       - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),5); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
     depends_on:
       db:
         condition: service_healthy
@@ -35,7 +41,7 @@ services:
     env_file: .env
     command: sh -c 'while true; do python manage.py backup_database; sleep ${BACKUP_INTERVAL_SECONDS:-86400}; done'
     depends_on:
-      db:
+      web:
         condition: service_healthy
     volumes:
       - backup_data:/app/backups
