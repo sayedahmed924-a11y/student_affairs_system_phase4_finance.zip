@@ -4,6 +4,7 @@ import subprocess
 from pathlib import Path
 
 from django.conf import settings
+from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
 from django.db import connection, connections
 
@@ -27,6 +28,8 @@ class Command(BaseCommand):
             raise CommandError("ملف النسخة غير موجود أو غير صالح داخل مجلد النسخ الاحتياطية.")
 
         engine = connection.settings_dict["ENGINE"]
+        # Preserve the current live database before any destructive restore.
+        call_command("backup_database")
         if engine.endswith("postgresql"):
             if not filename.endswith(".dump"):
                 raise CommandError("امتداد النسخة لا يتوافق مع PostgreSQL.")
