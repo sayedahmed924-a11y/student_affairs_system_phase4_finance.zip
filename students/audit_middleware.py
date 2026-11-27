@@ -1,82 +1,64 @@
 import logging
-import re
+from contextvars import ContextVar
+
+from django.db import DatabaseError
 
 from .models import SystemAuditEvent
 
 logger = logging.getLogger(__name__)
-_WRITE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
-_OBJECT_ID = re.compile(r"(?:^|/)(\d+)(?:/|$)")
+_AUDIT_CONTEXT = ContextVar("student_affairs_audit_context", default=None)
 
 
-def _module_for_path(path):
-    if path.startswith("/students/finance/"):
-        return "finance", "الإدارة المالية"
-    if path.startswith("/students/academic/") or path.endswith("/transcript/"):
-        return "academic", "الشؤون الأكاديمية"
-    if path.startswith("/students/import/"):
-        return "imports", "استيراد البيانات"
-    if path.startswith("/students/backups/"):
-        return "backups", "النسخ الاحتياطي"
-    if path.startswith("/students/staff-access/"):
-        return "users", "المستخدمون والصلاحيات"
-    if path.startswith("/students/"):
-        return "students", "شؤون الطلاب"
-    return "system", "النظام"
-
-
-def _action_for_request(path, method):
-    lowered = path.rstrip("/").lower()
-    if method == "DELETE" or any(x in lowered for x in ("/void", "/cancel", "/reject")):
-        return "إلغاء أو رفض سجل"
-    if "/approve" in lowered:
-        return "اعتماد بيانات"
-    if method == "POST" and any(x in lowered for x in ("/add", "/create", "/payments")):
-        return "إضافة سجل"
-    if method in {"PUT", "PATCH"} or "/edit" in lowered:
-        return "تعديل بيانات"
-    if "/import/" in lowered:
-        return "استيراد أو معالجة ملف"
-    if "/backups/" in lowered:
-        return "إنشاء نسخة احتياطية"
-    if "/staff-access/" in lowered:
-        return "إدارة حساب أو صلاحية"
-    return "تنفيذ إجراء"
+def current_audit_context():
+    return _AUDIT_CONTEXT.get()
 
 
 class SystemAuditMiddleware:
-    """Record successful authenticated write requests without storing submitted form data."""
+    """Expose authenticated request metadata to model signals and finalize audit status."""
 
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-        response = self.get_response(request)
+        user = getattr(request, "user", None)
+        context = None
+        if user is not None and user.is_authenticated and user.is_active:
+            context = {
+                "user": user,
+                "path": request.path[:500],
+                "method": request.method,
+                "ip_address": request.META.get("REMOTE_ADDR") or None,
+                "user_agent": request.META.get("HTTP_USER_AGENT", "")[:500],
+                "event_ids": [],
+            }
+        token = _AUDIT_CONTEXT.set(context)
         try:
-            user = getattr(request, "user", None)
-            if (
-                request.method in _WRITE_METHODS
-                and 200 <= response.status_code < 400
-                and user is not None
-                and user.is_authenticated
-                and user.is_active
-                and not request.path.startswith("/static/")
-            ):
-                module, _ = _module_for_path(request.path)
-                object_ids = _OBJECT_ID.findall(request.path)
-                object_reference = object_ids[-1] if object_ids else ""
-                SystemAuditEvent.objects.create(
-                    user=user,
-                    actor_username=user.get_username()[:150],
-                    module=module,
-                    action=_action_for_request(request.path, request.method),
-                    path=request.path[:500],
-                    object_reference=object_reference[:120],
-                    method=request.method,
-                    status_code=response.status_code,
-                    ip_address=request.META.get("REMOTE_ADDR") or None,
-                    user_agent=request.META.get("HTTP_USER_AGENT", "")[:500],
-                )
-        except Exception:
-            # Audit storage failure must not turn a completed student/finance operation into an HTTP error.
-            logger.exception("Could not write system audit event")
-        return response
+            response = self.get_response(request)
+            if context:
+                try:
+                    event_ids = context.get("event_ids", [])
+                    if event_ids:
+                        SystemAuditEvent.objects.filter(pk__in=event_ids).update(
+                            status_code=response.status_code
+                        )
+                    elif (
+                        request.method == "POST"
+                        and request.path.startswith("/students/backups/")
+                        and 200 <= response.status_code < 400
+                    ):
+                        SystemAuditEvent.objects.create(
+                            user=user,
+                            actor_username=user.get_username()[:150],
+                            module="backups",
+                            action="إنشاء نسخة احتياطية",
+                            path=request.path[:500],
+                            method=request.method,
+                            status_code=response.status_code,
+                            ip_address=context["ip_address"],
+                            user_agent=context["user_agent"],
+                        )
+                except DatabaseError:
+                    logger.exception("Could not finalize central system audit event")
+            return response
+        finally:
+            _AUDIT_CONTEXT.reset(token)
