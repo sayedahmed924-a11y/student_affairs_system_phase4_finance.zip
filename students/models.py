@@ -11,6 +11,8 @@ class Student(models.Model):
     full_name = models.CharField("اسم الطالب", max_length=200, db_index=True)
     national_id = models.CharField("الرقم القومي", max_length=20, blank=True, db_index=True)
     nationality = models.CharField("الجنسية", max_length=80, blank=True, default="مصري")
+    financial_code = models.CharField("الكود المالي", max_length=60, blank=True, db_index=True)
+    program = models.CharField("البرنامج", max_length=120, blank=True, db_index=True)
     phone = models.CharField("الهاتف", max_length=30, blank=True)
     address = models.TextField("العنوان", blank=True)
     academic_year = models.CharField("الفرقة الدراسية", max_length=50, blank=True)
@@ -308,3 +310,79 @@ class SystemAuditEvent(models.Model):
 
     def __str__(self):
         return f"{self.actor_username} - {self.action} - {self.created_at:%Y-%m-%d %H:%M}"
+
+
+class FeeCatalog(models.Model):
+    """Official fee/service price list imported from the legacy Excel workbooks."""
+    CATEGORIES = [
+        ("ministry", "رسوم الوزارة"),
+        ("expat_club", "رسوم نادي الوافدين"),
+        ("dollar_services", "الخدمات الدولارية"),
+        ("other", "خدمات أخرى"),
+    ]
+    CURRENCIES = [("USD", "دولار أمريكي"), ("EGP", "جنيه مصري")]
+    category = models.CharField("فئة الرسوم", max_length=24, choices=CATEGORIES, db_index=True)
+    name = models.CharField("نوع الخدمة", max_length=180, db_index=True)
+    amount = models.DecimalField("قيمة الخدمة", max_digits=12, decimal_places=2)
+    currency = models.CharField("العملة", max_length=3, choices=CURRENCIES)
+    amount_words = models.CharField("المبلغ بالحروف", max_length=300, blank=True)
+    bank_name = models.CharField("اسم البنك", max_length=180, blank=True)
+    source_workbook = models.CharField("ملف المصدر", max_length=255, blank=True)
+    source_sheet = models.CharField("ورقة المصدر", max_length=180, blank=True)
+    is_active = models.BooleanField("نشط", default=True)
+    updated_at = models.DateTimeField("آخر تحديث", auto_now=True)
+
+    class Meta:
+        ordering = ["category", "name", "amount"]
+        verbose_name = "بند رسوم/خدمة"
+        verbose_name_plural = "دليل الرسوم والخدمات"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["category", "name", "amount", "currency"],
+                name="uniq_fee_category_name_amount_currency",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.name} - {self.amount} {self.currency}"
+
+
+class SupplyOrder(models.Model):
+    """A header for a ministry/bank supply order imported from Excel."""
+    CATEGORIES = FeeCatalog.CATEGORIES
+    CURRENCIES = FeeCatalog.CURRENCIES
+    order_number = models.CharField("رقم أمر التوريد", max_length=100, blank=True, db_index=True)
+    category = models.CharField("فئة أمر التوريد", max_length=24, choices=CATEGORIES, db_index=True)
+    currency = models.CharField("العملة", max_length=3, choices=CURRENCIES)
+    bank_name = models.CharField("اسم البنك", max_length=180, blank=True)
+    total_amount = models.DecimalField("إجمالي أمر التوريد", max_digits=14, decimal_places=2, default=0)
+    amount_words = models.CharField("الإجمالي بالحروف", max_length=400, blank=True)
+    source_workbook = models.CharField("ملف المصدر", max_length=255)
+    source_sheet = models.CharField("ورقة المصدر", max_length=180, blank=True)
+    imported_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    imported_at = models.DateTimeField(auto_now_add=True)
+    notes = models.TextField("ملاحظات", blank=True)
+
+    class Meta:
+        ordering = ["-imported_at"]
+        verbose_name = "أمر توريد"
+        verbose_name_plural = "أوامر التوريد"
+
+    def __str__(self):
+        return self.order_number or f"{self.get_category_display()} #{self.pk}"
+
+
+class SupplyOrderLine(models.Model):
+    order = models.ForeignKey(SupplyOrder, on_delete=models.PROTECT, related_name="lines")
+    student = models.ForeignKey(Student, on_delete=models.PROTECT, null=True, blank=True, related_name="supply_order_lines")
+    service_name = models.CharField("بيان الخدمة", max_length=180, blank=True)
+    amount = models.DecimalField("المبلغ", max_digits=12, decimal_places=2)
+    currency = models.CharField("العملة", max_length=3, choices=FeeCatalog.CURRENCIES)
+    amount_words = models.CharField("المبلغ بالحروف", max_length=300, blank=True)
+    source_row = models.PositiveIntegerField("رقم الصف في Excel", null=True, blank=True)
+    source_data = models.JSONField("بيانات الصف الأصلية", default=dict, blank=True)
+
+    class Meta:
+        ordering = ["id"]
+        verbose_name = "بند أمر توريد"
+        verbose_name_plural = "بنود أوامر التوريد"
