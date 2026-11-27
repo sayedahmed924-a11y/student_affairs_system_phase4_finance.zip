@@ -17,7 +17,7 @@ def _superuser(user):
 def _backup_files():
     directory = Path(getattr(settings, "BACKUP_DIR", settings.BASE_DIR / "backups"))
     directory.mkdir(parents=True, exist_ok=True)
-    allowed = re.compile(r"^student_affairs_\d{8}_\d{6}\.(?:dump|sqlite3)$")
+    allowed = re.compile(r"^student_affairs_\d{8}_\d{6}(?:\.(?:dump|sqlite3)|_media\.tar\.gz)$")
     files = []
     for path in directory.iterdir():
         if path.is_file() and allowed.fullmatch(path.name):
