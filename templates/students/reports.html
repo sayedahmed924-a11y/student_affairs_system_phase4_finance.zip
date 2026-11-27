@@ -17,6 +17,7 @@
     <div><label>الفصل الدراسي</label><select name="semester"><option value="">كل الفصول</option><option value="first" {% if filters.semester == "first" %}selected{% endif %}>الأول</option><option value="second" {% if filters.semester == "second" %}selected{% endif %}>الثاني</option><option value="summer" {% if filters.semester == "summer" %}selected{% endif %}>الصيفي</option></select></div>
     <div><label>القسم</label><select name="department"><option value="">كل الأقسام</option>{% for d in departments %}<option value="{{ d }}" {% if filters.department == d %}selected{% endif %}>{{ d }}</option>{% endfor %}</select></div>
     <div><label>الفرقة</label><select name="level"><option value="">كل الفرق</option>{% for l in levels %}<option value="{{ l }}" {% if filters.level == l %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+    {% if kind != "finance" %}
     <div><label>الحالة</label><select name="status"><option value="">كل الحالات</option>
       {% if kind == "grades" or kind == "success" %}
         <option value="passed" {% if filters.status == "passed" %}selected{% endif %}>ناجح</option><option value="failed" {% if filters.status == "failed" %}selected{% endif %}>راسب</option><option value="pending" {% if filters.status == "pending" %}selected{% endif %}>لم ترصد</option><option value="withdrawn" {% if filters.status == "withdrawn" %}selected{% endif %}>منسحب</option>
@@ -26,6 +27,7 @@
         <option value="new" {% if filters.status == "new" %}selected{% endif %}>مستجد</option><option value="continuing" {% if filters.status == "continuing" %}selected{% endif %}>باقٍ</option><option value="graduated" {% if filters.status == "graduated" %}selected{% endif %}>خريج</option><option value="withdrawn" {% if filters.status == "withdrawn" %}selected{% endif %}>منسحب</option><option value="dismissed" {% if filters.status == "dismissed" %}selected{% endif %}>مفصول</option><option value="suspended" {% if filters.status == "suspended" %}selected{% endif %}>موقوف</option>
       {% endif %}
     </select></div>
+    {% endif %}
   </div>
   <div class="actions">
     <button type="submit">عرض التقرير</button>
