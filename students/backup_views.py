@@ -35,6 +35,7 @@ def backup_dashboard(request):
     if request.method == "POST":
         try:
             call_command("backup_database")
+            request._audit_action = "إنشاء نسخة احتياطية"
             messages.success(request, "تم إنشاء نسخة احتياطية بنجاح.")
         except (CommandError, OSError, ValueError) as exc:
             messages.error(request, f"تعذر إنشاء النسخة الاحتياطية: {exc}")
