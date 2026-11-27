@@ -49,3 +49,36 @@ class StaffAccessTests(TestCase):
         self.client.force_login(administrator)
         response = self.client.get(reverse("students:staff_access"))
         self.assertEqual(response.status_code, 200)
+
+
+class BackupAccessTests(TestCase):
+    def test_backup_dashboard_is_superuser_only(self):
+        employee = User.objects.create_user(
+            username="backup_employee",
+            password="Strong-Backup-Password-123!",
+            is_staff=False,
+        )
+        self.client.force_login(employee)
+        response = self.client.get(reverse("students:backup_dashboard"))
+        self.assertEqual(response.status_code, 302)
+
+        administrator = User.objects.create_superuser(
+            username="backup_admin",
+            email="backup-admin@example.invalid",
+            password="Strong-Backup-Admin-123!",
+        )
+        self.client.force_login(administrator)
+        response = self.client.get(reverse("students:backup_dashboard"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_backup_download_rejects_invalid_filename(self):
+        administrator = User.objects.create_superuser(
+            username="backup_download_admin",
+            email="backup-download@example.invalid",
+            password="Strong-Backup-Admin-123!",
+        )
+        self.client.force_login(administrator)
+        response = self.client.get(
+            reverse("students:download_backup", kwargs={"filename": "../db.sqlite3"})
+        )
+        self.assertEqual(response.status_code, 404)
