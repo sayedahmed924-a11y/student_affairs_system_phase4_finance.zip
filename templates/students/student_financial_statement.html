@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}كشف الحساب المالي{% endblock %}
+{% block content %}
+<div class="actions"><a class="btn secondary" href="{% url 'students:detail' student.pk %}">العودة لملف الطالب</a><button type="button" onclick="window.print()">طباعة / PDF</button></div>
+<h1>كشف الحساب المالي للطالب</h1>
+<div class="card"><h2>{{ student.full_name }}</h2><p><b>الرقم الجامعي:</b> {{ student.university_id }}</p></div>
+<div class="grid" style="margin-top:16px">
+<div class="card"><div class="muted">إجمالي المدين</div><div class="num">{{ total_debit|floatformat:2 }}</div></div>
+<div class="card"><div class="muted">إجمالي الدائن / المسدد</div><div class="num">{{ total_credit|floatformat:2 }}</div></div>
+<div class="card"><div class="muted">الرصيد</div><div class="num">{{ balance|floatformat:2 }}</div></div>
+</div>
+<div class="card" style="margin-top:16px"><table><thead><tr><th>التاريخ</th><th>النوع</th><th>البيان</th><th>رقم الإيصال</th><th>مدين</th><th>دائن</th><th>الرصيد</th></tr></thead><tbody>
+{% for entry in entries %}<tr><td>{{ entry.date|date:"Y-m-d H:i" }}</td><td>{{ entry.kind }}</td><td>{{ entry.description }}</td><td>{{ entry.reference|default:"—" }}</td><td>{{ entry.debit|floatformat:2 }}</td><td>{{ entry.credit|floatformat:2 }}</td><td>{{ entry.balance|floatformat:2 }}</td></tr>{% empty %}<tr><td colspan="7">لا توجد حركة مالية.</td></tr>{% endfor %}
+</tbody></table></div>
+<style>@media print{header,.actions{display:none!important}.wrap{max-width:none;margin:0;padding:0}.card{box-shadow:none}table{font-size:10px}th,td{padding:5px}}</style>
+{% endblock %}
