@@ -40,7 +40,7 @@ def student_list(request):
     q = request.GET.get("q", "").strip()
     students = Student.objects.filter(is_archived=False)
     if q:
-        students = students.filter(Q(university_id__icontains=q) | Q(full_name__icontains=q) | Q(national_id__icontains=q))
+        students = students.filter(Q(university_id__icontains=q) | Q(financial_code__icontains=q) | Q(full_name__icontains=q) | Q(national_id__icontains=q))
     return render(request, "students/student_list.html", {"students": students[:300], "q": q})
 
 @login_required
