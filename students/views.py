@@ -46,7 +46,7 @@ def student_list(request):
 @permission_required("students.view_student", raise_exception=True)
 def student_detail(request, pk):
     student = get_object_or_404(Student, pk=pk)
-    logs = student.audit_logs.select_related("employee")
+    logs = student.audit_logs.select_related("employee") if request.user.has_perm("students.view_auditlog") else AuditLog.objects.none()
     return render(request, "students/student_detail.html", {"student": student, "logs": logs})
 
 def _log_changes(student, old, new, user, reason, document=None, action="update", batch_id=None):
