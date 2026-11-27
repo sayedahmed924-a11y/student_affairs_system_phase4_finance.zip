@@ -119,3 +119,29 @@ class SystemAuditEventAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+from .models import FeeCatalog, SupplyOrder, SupplyOrderLine
+
+@admin.register(FeeCatalog)
+class FeeCatalogAdmin(admin.ModelAdmin):
+    list_display = ("category", "name", "amount", "currency", "bank_name", "is_active", "updated_at")
+    list_filter = ("category", "currency", "is_active")
+    search_fields = ("name", "bank_name", "source_workbook", "source_sheet")
+    readonly_fields = ("updated_at",)
+
+@admin.register(SupplyOrder)
+class SupplyOrderAdmin(admin.ModelAdmin):
+    list_display = ("order_number", "category", "total_amount", "currency", "bank_name", "source_workbook", "imported_at")
+    list_filter = ("category", "currency", "imported_at")
+    search_fields = ("order_number", "bank_name", "source_workbook")
+    readonly_fields = [field.name for field in SupplyOrder._meta.fields]
+
+@admin.register(SupplyOrderLine)
+class SupplyOrderLineAdmin(admin.ModelAdmin):
+    list_display = ("order", "student", "service_name", "amount", "currency", "source_row")
+    search_fields = ("student__university_id", "student__full_name", "service_name", "order__order_number")
+    readonly_fields = [field.name for field in SupplyOrderLine._meta.fields]
+    def has_add_permission(self, request): return False
+    def has_change_permission(self, request, obj=None): return False
+    def has_delete_permission(self, request, obj=None): return False
