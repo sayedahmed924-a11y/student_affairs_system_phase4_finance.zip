@@ -70,7 +70,7 @@ def reports_home(request):
         "enrollments": ("students.view_studentenrollment",),
         "grades": ("students.view_courseregistration",),
         "success": ("students.view_courseregistration",),
-        "finance": ("students.view_studentcharge",),
+        "finance": ("students.view_studentcharge", "students.view_paymentreceipt"),
     }
     for permission in required_permissions.get(kind, ("students.view_student",)):
         if not request.user.has_perm(permission):
@@ -208,6 +208,7 @@ def reports_home(request):
 @permission_required("students.view_courseregistration", raise_exception=True)
 @permission_required("students.view_studentacademicevent", raise_exception=True)
 @permission_required("students.view_studentcharge", raise_exception=True)
+@permission_required("students.view_paymentreceipt", raise_exception=True)
 def student_full_report(request, pk):
     from .models import StudentAcademicEvent
     student = get_object_or_404(Student, pk=pk)
