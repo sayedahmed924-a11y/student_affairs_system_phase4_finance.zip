@@ -54,7 +54,7 @@ TEMPLATES = [{
 }]
 WSGI_APPLICATION = "config.wsgi.application"
 
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse, parse_qs, unquote
 
 DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 if DATABASE_URL:
@@ -64,9 +64,9 @@ if DATABASE_URL:
     query = parse_qs(parsed_db.query)
     DATABASES = {"default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": parsed_db.path.lstrip("/"),
-        "USER": parsed_db.username or "",
-        "PASSWORD": parsed_db.password or "",
+        "NAME": unquote(parsed_db.path.lstrip("/")),
+        "USER": unquote(parsed_db.username or ""),
+        "PASSWORD": unquote(parsed_db.password or ""),
         "HOST": parsed_db.hostname or "",
         "PORT": parsed_db.port or 5432,
         "CONN_MAX_AGE": 60,
