@@ -599,6 +599,7 @@ def charge_cancel(request, pk):
 
 @login_required
 @permission_required("students.view_paymentreceipt", raise_exception=True)
+@permission_required("students.print_reports", raise_exception=True)
 def receipt_print(request, pk):
     receipt = get_object_or_404(PaymentReceipt.objects.select_related("charge__student", "charge__term", "received_by"), pk=pk)
     return render(request, "students/receipt_print.html", {"receipt": receipt})
