@@ -7,6 +7,7 @@ from django.core.management import call_command, CommandError
 from django.http import FileResponse, Http404
 from django.shortcuts import redirect, render
 from django.conf import settings
+from django.utils import timezone
 
 
 def _superuser(user):
@@ -23,7 +24,7 @@ def _backup_files():
             files.append({
                 "name": path.name,
                 "size": path.stat().st_size,
-                "created": path.stat().st_mtime,
+                "created": timezone.datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.get_current_timezone()),
             })
     return sorted(files, key=lambda item: item["created"], reverse=True)
 
